@@ -158,6 +158,16 @@ class MapManager:
                     
         return None
 
+    def is_tile_on_cooldown(self, gx, gy):
+        now = pygame.time.get_ticks()
+        if (gx, gy) in self.tile_cooldowns:
+            if now < self.tile_cooldowns[(gx, gy)]: return True
+            else: del self.tile_cooldowns[(gx, gy)]
+        return False
+
+    def set_tile_cooldown(self, gx, gy, duration_ms=3000):
+        self.tile_cooldowns[(gx, gy)] = pygame.time.get_ticks() + duration_ms
+
     # ... (기존 메서드들)
         self.width, self.height = 40, 30
         for k in self.map_data: self.map_data[k] = [[(0,0) for _ in range(self.width)] for _ in range(self.height)]

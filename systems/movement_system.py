@@ -44,34 +44,47 @@ class MovementSystem(BaseSystem):
             entity.transform.rect.y = int(entity.transform.y)
 
     def _calculate_speed(self, entity, weather_type):
-        base = SPEED_WALK
-        if entity.physics.move_state == "RUN": base = SPEED_RUN
-        elif entity.physics.move_state == "CROUCH": base = SPEED_CROUCH
+        base_speed = SPEED_WALK
+        if entity.physics.move_state == "RUN": base_speed = SPEED_RUN
+        elif entity.physics.move_state == "CROUCH": base_speed = SPEED_CROUCH
         
         multiplier = 1.0
+        if not hasattr(entity, 'stats') or not hasattr(entity, 'role'):
+            return base_speed
+
+        emotions = entity.stats.emotions
+        buffs = entity.stats.status_effects
         
-        if hasattr(entity, 'stats') and hasattr(entity, 'role'):
-            emotions = entity.stats.emotions
+        # 1. 긍정적 효과
+        if 'HAPPINESS' in emotions: multiplier += 0.10
+        if 'DOPAMINE' in emotions:
+            level = emotions['DOPAMINE']
+            bonus = [0, 0.05, 0.10, 0.15, 0.20, 0.30] # 레벨별 보너스
+            multiplier += bonus[min(level, 5)]
+        if 'RAGE' in emotions:
+            level = emotions['RAGE']
+            bonus = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
+            multiplier += bonus[min(level, 5)]
+
+        # 2. 부정적 효과
+        if 'FEAR' in emotions: multiplier -= 0.30
+        
+        if 'FATIGUE' in emotions:
+            level = emotions['FATIGUE']
+            penalty = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
+            multiplier -= penalty[min(level, 5)]
             
-            # 긍정 효과
-            if 'HAPPINESS' in emotions: multiplier += 0.10
-            if 'DOPAMINE' in emotions: # 레벨별 처리는 생략하고 단순화하거나 추가 구현
-                multiplier += 0.20
-            if 'RAGE' in emotions:
-                multiplier += 0.20
-                
-            # 부정 효과
-            if 'FEAR' in emotions: multiplier -= 0.30
-            if 'FATIGUE' in emotions: multiplier -= 0.15 # 평균치
-            if 'PAIN' in emotions and not entity.stats.status_effects.get('NO_PAIN'): multiplier -= 0.15
-            
-            # 직업/버프 효과
-            if entity.role.main_role == "POLICE": multiplier *= POLICE_SPEED_MULTI
-            if entity.stats.status_effects.get('FAST_WORK'): multiplier *= 1.2
-            
+        if 'PAIN' in emotions and not buffs.get('NO_PAIN'):
+            level = emotions['PAIN']
+            penalty = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
+            multiplier -= penalty[min(level, 5)]
+
+        # 3. 직업 및 기타 보정
+        if entity.role.main_role == "POLICE": multiplier *= POLICE_SPEED_MULTI
+        if buffs.get('FAST_WORK'): multiplier *= 1.2
         if weather_type == 'SNOW': multiplier *= 0.8
         
-        return base * max(0.2, multiplier)
+        return base_speed * max(0.2, multiplier)
 
     def _move_single_axis(self, entity, dx, dy, map_manager):
         # 1. 위치 이동

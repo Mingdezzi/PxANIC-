@@ -161,10 +161,30 @@ class InteractionSystem(BaseSystem):
         d_val = get_tile_interaction(tid)
         name = get_tile_name(tid)
 
+        # [복구] 마피아 문 파괴 로직 (시간 체크 추가)
+        current_phase = self.time_system.current_phase if self.time_system else 'DAY'
+        
+        if entity.role.main_role == "MAFIA" and current_phase == "NIGHT":
+             if cat in [5, 9]: # Door or Window
+                 self.event_bus.publish("START_MINIGAME", {
+                     'type': 'MASHING', 
+                     'difficulty': 2, 
+                     'context': {'action': 'BREAK_DOOR', 'gx': gx, 'gy': gy, 'entity': entity}
+                 })
+                 return
+
         if cat == 5:
             if d_val == 1:
                 if mode == 'short': self.map_manager.open_door(gx, gy); self._play_sound("CREAK", gx, gy)
                 elif mode == 'long':
+                    if entity.role.main_role == "MAFIA": # 밤 체크 추가 필요
+                        self.event_bus.publish("START_MINIGAME", {
+                             'type': 'MASHING', 
+                             'difficulty': 2, 
+                             'context': {'action': 'BREAK_DOOR', 'gx': gx, 'gy': gy, 'entity': entity}
+                        })
+                        return
+
                     if self._has_key(entity) and entity.stats.ap >= 5:
                         entity.stats.ap -= 5
                         if self.map_manager.lock_door(gx, gy):
@@ -172,6 +192,14 @@ class InteractionSystem(BaseSystem):
             elif d_val == 3:
                 if mode == 'short': self.event_bus.publish("SHOW_ALERT", {'text': "It's Locked."})
                 elif mode == 'long':
+                    if entity.role.main_role == "MAFIA": # 밤 체크 추가 필요
+                         self.event_bus.publish("START_MINIGAME", {
+                             'type': 'MASHING', 
+                             'difficulty': 2, 
+                             'context': {'action': 'BREAK_DOOR', 'gx': gx, 'gy': gy, 'entity': entity}
+                         })
+                         return
+                    
                     if self._use_key(entity): self.map_manager.unlock_door(gx, gy); self.event_bus.publish("SHOW_ALERT", {'text': "Unlocked"}); self._play_sound("CLICK", gx, gy)
                     elif entity.stats.ap >= 5:
                         self.event_bus.publish("START_MINIGAME", {'type': 'LOCKPICK', 'difficulty': 2, 'context': {'action': 'UNLOCK_DOOR', 'gx': gx, 'gy': gy, 'entity': entity}})
@@ -191,6 +219,12 @@ class InteractionSystem(BaseSystem):
         result = data.get('result'); ctx = data.get('context', {}); action = ctx.get('action'); entity = ctx.get('entity'); gx, gy = ctx.get('gx'), ctx.get('gy')
         if result == 'SUCCESS':
             if action == 'OPEN_CHEST': self._open_chest_reward(entity, gx, gy)
+            elif action == 'BREAK_DOOR':
+                if entity.stats.ap >= 2:
+                    entity.stats.ap -= 2
+                    self.map_manager.set_tile(gx, gy, 5310005, layer='object') # Broken Door
+                    self._play_sound("BANG!", gx, gy)
+                    self.event_bus.publish("SHOW_ALERT", {'text': "Door Smashed!", 'color': (255, 50, 50)})
             elif action == 'UNLOCK_DOOR':
                 entity.stats.ap -= 5; self.map_manager.unlock_door(gx, gy); self.event_bus.publish("SHOW_ALERT", {'text': "Picklock Success!"}); self._play_sound("CLICK", gx, gy)
             elif action == 'DO_WORK':
