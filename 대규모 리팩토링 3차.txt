@@ -1,0 +1,235 @@
+================================================================================
+[PIXELNIGHT] 전체 리팩토링 상세 기획서 및 작업 지시서
+================================================================================
+문서 번호: PN-REFACTOR-2026-001
+작성 일자: 2026-01-16
+목 표: 유지보수성, 확장성, 객체지향적 설계를 위한 아키텍처 재구축 (ECS 패턴 도입)
+
+--------------------------------------------------------------------------------
+1. 아키텍처 개요 (Architecture Overview)
+--------------------------------------------------------------------------------
+기존의 Monolithic(거대 클래스) 구조를 탈피하여, 데이터(Component), 로직(System), 
+관리자(Manager)로 명확히 분리합니다.
+
+* Entity (엔티티): 고유 ID를 가진 껍데기 객체. 컴포넌트들의 집합.
+* Component (컴포넌트): 로직이 없는 순수 데이터 집합 (예: 위치, 체력, 인벤토리).
+* System (시스템): 컴포넌트를 가진 엔티티들을 처리하는 실제 로직 (예: 이동, 전투).
+* Event Bus (이벤트 버스): 객체 간 직접 참조를 끊기 위한 메시지 통신 채널.
+* State Machine (상태 머신): 게임의 씬(Scene) 및 캐릭터의 세부 상태 관리.
+
+--------------------------------------------------------------------------------
+2. 전체 디렉토리 및 파일 구조 (Directory Structure)
+--------------------------------------------------------------------------------
+/pixelnight
+├── main.py                     # [Entry] 게임 진입점
+├── settings.py                 # [Config] 전역 설정 및 상수
+├── core/                       # [Core] 엔진 핵심 모듈
+│   ├── __init__.py
+│   ├── engine.py               # 메인 루프, 델타타임, 윈도우 관리
+│   ├── event_bus.py            # Pub/Sub 패턴 이벤트 시스템
+│   ├── resource_manager.py     # 에셋(이미지, 사운드, 폰트) 로드 및 캐싱
+│   └── state_machine.py        # 상태 전이 관리자 (State Pattern)
+├── components/                 # [Data] 엔티티 구성 요소 (순수 데이터)
+│   ├── __init__.py
+│   ├── transform.py            # 위치(x,y), 방향, 크기(Rect)
+│   ├── physics.py              # 속도(Velocity), 물리 충돌 속성
+│   ├── stats.py                # HP, AP, Alive, 감정(Emotion)
+│   ├── role.py                 # 직업(Role), 진영, 특수 능력 데이터
+│   ├── inventory.py            # 아이템 소지 목록, 돈(Coin)
+│   ├── interaction.py          # 상호작용 상태 (작업 진행도 등)
+│   ├── ai_brain.py             # BT(행동 트리) 상태, 타겟, 경로
+│   └── graphics.py             # 스프라이트, 애니메이션 상태, 가시성
+├── entities/                   # [Factory] 엔티티 조립 공장
+│   ├── __init__.py
+│   └── factory.py              # Player, NPC, Object 생성 및 컴포넌트 조립
+├── systems/                    # [Logic] 게임 동작 구현 (매 프레임 갱신)
+│   ├── __init__.py
+│   ├── base_system.py          # 시스템 기본 인터페이스
+│   ├── input_system.py         # 사용자 입력 -> 의도(Intent) 변환
+│   ├── movement_system.py      # 위치 이동, 충돌 감지 및 해결
+│   ├── ai_system.py            # NPC 행동 트리 실행, 타겟 감지, 길찾기 요청
+│   ├── combat_system.py        # 공격 판정, 데미지 적용, 사망 처리
+│   ├── interaction_system.py   # 문 열기/잠그기, 채집, 해킹 등
+│   ├── render_system.py        # 월드, 엔티티, 조명(FOV), 파티클 그리기
+│   ├── sound_system.py         # 효과음 재생 및 시각적 사운드(Visual Sound) 처리
+│   ├── weather_system.py       # 날씨 효과(비/눈/안개) 및 파티클 관리
+│   └── time_system.py          # 게임 시간 흐름, 페이즈(낮/밤) 관리
+├── world/                      # [Map] 월드 데이터 관리
+│   ├── __init__.py
+│   ├── map_manager.py          # 타일맵 로딩, 구역(Zone) 정보 관리
+│   ├── pathfinder.py           # A* 길찾기 알고리즘 (독립 모듈)
+│   └── tiles.py                # 타일 속성 및 메타데이터 정의
+├── ui/                         # [UI] 사용자 인터페이스
+│   ├── __init__.py
+│   ├── ui_manager.py           # UI 렌더링 총괄 및 입력 이벤트 분배
+│   ├── widgets/                # 재사용 가능한 UI 위젯
+│   │   ├── hud.py              # 상태바 (HP/AP/Coins)
+│   │   ├── minimap.py          # 미니맵 로직
+│   │   ├── popup.py            # 알림 메시지, 상호작용 바
+│   │   └── controls.py         # 조작 가이드
+│   └── windows/                # 팝업 윈도우
+│       ├── inventory_window.py # 인벤토리 창
+│       ├── shop_window.py      # 상점(자판기) 창
+│       ├── vote_window.py      # 투표 시스템 창
+│       └── news_window.py      # 아침 뉴스 창
+└── states/                     # [State] 게임 씬(Scene) 관리
+    ├── __init__.py
+    ├── base_state.py
+    ├── menu_state.py           # 타이틀/메인 메뉴
+    ├── lobby_state.py          # 대기실/설정
+    └── play_state.py           # 인게임 (시스템 초기화 및 루프 실행)
+
+--------------------------------------------------------------------------------
+3. 상세 모듈별 기능 명세 (Detailed Specifications)
+--------------------------------------------------------------------------------
+
+[3-1] CORE (핵심 엔진)
+
+(1) core/engine.py
+- class GameEngine:
+    - __init__(): Pygame 초기화, 화면(Screen) 생성, EventBus 생성, StateMachine 초기화.
+    - run(): 게임 메인 루프 (While True). 델타타임 계산.
+    - _handle_events(): Pygame 이벤트 큐 처리 (QUIT, KEYDOWN 등).
+    - _update(dt): 현재 활성 State의 update 호출.
+    - _draw(): 현재 활성 State의 draw 호출.
+
+(2) core/event_bus.py
+- class EventBus:
+    - subscribe(event_type: str, callback: func): 특정 이벤트 리스너 등록.
+    - unsubscribe(event_type: str, callback: func): 리스너 제거.
+    - publish(event_type: str, data: dict): 이벤트 발생 및 구독자들에게 전파.
+
+(3) core/resource_manager.py
+- class ResourceManager:
+    - load_image(path, alpha=True): 이미지 로드 및 캐싱.
+    - load_sound(path): 사운드 로드 및 캐싱.
+    - get_font(name, size): 폰트 로드 및 캐싱.
+    - create_gradient_surface(radius, color): 조명/시야용 그라데이션 텍스처 생성.
+
+[3-2] COMPONENTS (데이터 컨테이너)
+* 모든 컴포넌트는 메서드 없이 데이터(__init__)만 가짐.
+
+(1) components/transform.py
+- class Transform:
+    - x, y: 월드 상의 정밀 좌표 (float).
+    - rect: 충돌 및 렌더링용 사각형 (pygame.Rect).
+    - facing: 바라보는 방향 벡터 (dx, dy).
+
+(2) components/stats.py
+- class Stats:
+    - hp, max_hp: 체력.
+    - ap, max_ap: 행동력(기력).
+    - alive: 생존 여부 (bool).
+    - emotions: 감정 상태 딕셔너리 (예: {'FEAR': 1}).
+    - status_effects: 상태 이상 플래그 (예: {'STUNNED': True}).
+
+(3) components/role.py
+- class Role:
+    - main_role: "CITIZEN", "MAFIA", "POLICE", "DOCTOR", "SPECTATOR".
+    - sub_role: "FARMER", "MINER", "FISHER" (시민일 경우).
+    - is_revealed: 정체가 공개되었는지 여부.
+    - ability_cooldown: 특수 능력 사용 대기 시간.
+
+(4) components/inventory.py
+- class Inventory:
+    - items: 아이템 소지 목록 {'item_key': count}.
+    - coins: 소지 금액.
+
+(5) components/ai_brain.py
+- class AIBrain:
+    - tree: Behavior Tree 루트 노드 객체.
+    - current_state: 현재 행동 상태 (IDLE, CHASE, PATROL 등).
+    - target_entity: 현재 추적/공격 대상 엔티티.
+    - path: 이동 경로 리스트 [(x, y), ...].
+    - suspicion_meter: 대상별 의심도 {'Player': 50}.
+
+[3-3] SYSTEMS (게임 로직)
+
+(1) systems/input_system.py
+- class InputSystem:
+    - process(player_entity): 키보드/마우스 입력을 확인.
+    - _handle_movement(): 방향키 입력 -> Transform 컴포넌트의 속도 벡터 설정.
+    - _handle_actions(): Z, X, C, E 키 입력 -> EventBus.publish("ACTION_REQUEST", ...).
+
+(2) systems/movement_system.py
+- class MovementSystem:
+    - update(dt, entities, map_manager): 위치 갱신.
+    - _check_collision(rect, map_manager): 벽/오브젝트 충돌 검사.
+    - _apply_velocity(entity, dt): 좌표 이동 (x += vx * dt).
+    - _apply_friction(): 감속 처리.
+
+(3) systems/ai_system.py
+- class AISystem:
+    - update(dt, npcs, player): 모든 NPC의 AI 로직 실행.
+    - _update_vision(npc): 시야 내 타겟 감지 (경찰/마피아 전용). **중요: role 직접 확인 금지, is_visible_villain() 사용.**
+    - _run_behavior_tree(npc): BT tick() 실행.
+    - _request_pathfinding(npc, target_pos): Pathfinder에 경로 계산 요청.
+
+(4) systems/combat_system.py
+- class CombatSystem:
+    - update(dt, bullets): 투사체(총알) 이동 및 충돌 처리.
+    - handle_attack(attacker, target): 공격 사거리, 쿨타임, 명중 판정.
+    - apply_damage(target, amount): HP 감소, 사망 체크.
+    - _on_death(entity): 사망 시 아이템 드랍, 이벤트 발생 (EventBus.publish("ENTITY_DIED")).
+
+(5) systems/render_system.py
+- class RenderSystem:
+    - draw(screen, camera, entities, map_manager): 전체 렌더링 파이프라인.
+    - _draw_map_layer(layer_name): 바닥/벽 타일 그리기 (최적화: 화면 내만).
+    - _draw_entities(entities): 캐릭터 스프라이트, ID, 상태바 그리기.
+    - _draw_lighting(player): Raycasting FOV 계산 및 어둠 마스크 적용.
+    - _draw_particles(): 날씨, 피격 효과 등 파티클 그리기.
+
+(6) systems/environment_system.py (Time & Weather)
+- class EnvironmentSystem:
+    - update(dt): 게임 시간 흐름 및 날씨 업데이트.
+    - _advance_phase(): 페이즈 변경(낮->밤) 처리 및 공지.
+    - _update_weather_particles(): 비/눈 파티클 위치 갱신.
+
+[3-4] ENTITIES (팩토리)
+
+(1) entities/factory.py
+- class EntityFactory:
+    - create_player(x, y, role_data): 플레이어 엔티티 생성. Transform, Stats, Role, Inventory, Input 컴포넌트 조립.
+    - create_npc(x, y, role_data): NPC 생성. Transform, Stats, Role, AIBrain 컴포넌트 조립.
+    - create_object(x, y, type): 상호작용 가능한 오브젝트 생성.
+
+[3-5] UI (사용자 인터페이스)
+
+(1) ui/ui_manager.py
+- class UIManager:
+    - __init__(): 하위 위젯(HUD, Minimap 등) 생성 및 등록.
+    - update(): 활성 위젯 로직 갱신.
+    - draw(screen): 활성 위젯 그리기 (Layer 순서대로).
+    - handle_event(event): 키 입력 등을 적절한 위젯/윈도우로 전달.
+    - toggle_window(window_name): 인벤토리, 상점 등 팝업 열기/닫기.
+
+(2) ui/widgets/minimap.py
+- class MinimapWidget:
+    - generate_surface(): 맵 데이터로 정적 미니맵 텍스처 생성.
+    - update(): 플레이어 및 레이더(특수 직업용) 위치 갱신.
+    - draw(): 화면 우측 하단에 그리기.
+
+[3-6] WORLD (월드)
+
+(1) world/map_manager.py
+- class MapManager:
+    - load_map(json_path): 맵 데이터 파싱.
+    - get_tile(x, y, layer): 타일 정보 반환.
+    - get_spawn_points(): 스폰 가능 위치 반환.
+
+(2) world/pathfinder.py
+- class Pathfinder:
+    - find_path(start, end, map_manager): A* 알고리즘으로 경로 계산. (NPC 클래스에서 분리됨)
+
+--------------------------------------------------------------------------------
+4. 리팩토링 진행 순서 (Work Order)
+--------------------------------------------------------------------------------
+1단계: Core 모듈 구현 (Engine, EventBus, ResourceManager)
+2단계: 데이터 컴포넌트(Components) 정의 및 구현
+3단계: 월드(Map) 및 렌더링(RenderSystem) 시스템 이식
+4단계: 엔티티 팩토리(Factory) 및 기본 이동(MovementSystem) 구현
+5단계: UI 시스템(UIManager) 분리 및 이식
+6단계: 게임 로직(AI, Combat, Interaction) 시스템 구현
+7단계: 상태(State) 연결 및 최종 테스트
+================================================================================
