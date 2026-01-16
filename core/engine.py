@@ -1,56 +1,65 @@
 import pygame
-from .event_bus import EventBus
-from .resource_manager import ResourceManager
+import sys
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT, FPS
+from core.state_machine import StateMachine
+from systems.logger import GameLogger
 
 class GameEngine:
     def __init__(self):
         pygame.init()
-        pygame.mixer.init()
-        
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-        pygame.display.set_caption("PIXELNIGHT")
-        
+        self.logger = GameLogger.get_instance()
+        self.logger.info("SYSTEM", "Game Engine Initializing...")
+
+        self.screen_width = SCREEN_WIDTH
+        self.screen_height = SCREEN_HEIGHT
+        self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
+        pygame.display.set_caption("PIXEL NIGHT - Refactored")
+
         self.clock = pygame.time.Clock()
         self.running = True
-        
-        # Core Modules
-        self.event_bus = EventBus()
-        self.resource_manager = ResourceManager.get_instance()
-        
-        # State Machine (추후 구현될 states 패키지에서 주입)
-        self.state_machine = None 
 
-    def set_state_machine(self, state_machine):
-        self.state_machine = state_machine
+
+        self.state_machine = StateMachine(self)
+
+
+        self.shared_data = {}
+
+
+        from states.menu_state import MenuState
+        self.state_machine.push(MenuState(self))
 
     def run(self):
-        if not self.state_machine:
-            raise Exception("State Machine not initialized!")
-
+        self.logger.info("SYSTEM", "Engine Loop Started")
         while self.running:
-            dt = self.clock.tick(FPS)
-            self._handle_events()
-            self._update(dt)
-            self._draw()
+            dt = self.clock.tick(FPS) / 1000.0
+            self.process_events()
+            self.update(dt)
+            self.draw()
 
-    def _handle_events(self):
+        self.quit()
+
+    def process_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-            
-            # UI Manager 등으로 이벤트 전달
-            if self.state_machine and self.state_machine.current_state:
-                self.state_machine.current_state.handle_event(event)
 
-    def _update(self, dt):
-        if self.state_machine:
-            self.state_machine.update(dt)
 
-    def _draw(self):
-        self.screen.fill((0, 0, 0)) # Default Clear Color
-        
-        if self.state_machine:
-            self.state_machine.draw(self.screen)
-            
+            if event.type == pygame.VIDEORESIZE:
+                self.screen_width, self.screen_height = event.w, event.h
+                self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
+
+
+
+            self.state_machine.handle_event(event)
+
+    def update(self, dt):
+        self.state_machine.update(dt)
+
+    def draw(self):
+        self.state_machine.draw(self.screen)
         pygame.display.flip()
+
+    def quit(self):
+        self.logger.info("SYSTEM", "Engine Shutting Down")
+        pygame.quit()
+        sys.exit()

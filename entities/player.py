@@ -164,15 +164,6 @@ class Player(Entity):
                 
         return sound_events
 
-    def is_visible_villain(self, phase):
-        if phase not in ['NIGHT', 'DAWN']:
-            return False
-        
-        if self.role == 'MAFIA':
-            return True
-            
-        return False
-
     def calculate_emotions(self, phase, npcs, is_blackout):
         self.emotions = {}
         if not self.alive or self.role == "SPECTATOR": return

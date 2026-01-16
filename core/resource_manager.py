@@ -1,5 +1,13 @@
 import pygame
 import os
+import sys
+
+# [수정] 순환 참조 방지를 위해 로거는 필요할 때 import하거나 간단히 처리
+# 여기서는 시스템 로거를 사용하거나 print로 대체할 수 있으나, 기존 구조 유지를 위해 systems.logger 시도
+try:
+    from systems.logger import GameLogger
+except ImportError:
+    GameLogger = None
 
 class ResourceManager:
     _instance = None
@@ -15,94 +23,67 @@ class ResourceManager:
             raise Exception("This class is a singleton!")
         ResourceManager._instance = self
 
+        self.logger = GameLogger.get_instance() if GameLogger else None
         self.fonts = {}
         self.sounds = {}
-        self.images = {}
-        
-        # 시스템 폰트 미리 로드
+        self.images = {} # 이미지 캐시
+
         self._load_system_fonts()
 
+    def _log(self, level, msg):
+        if self.logger:
+            if level == "ERROR": self.logger.error("RESOURCE", msg)
+            elif level == "WARNING": self.logger.warning("RESOURCE", msg)
+            else: self.logger.info("RESOURCE", msg)
+        else:
+            print(f"[RESOURCE] {msg}")
+
     def _load_system_fonts(self):
-        font_names = ["malgungothic", "arial", "sans-serif"]
-        selected_font = None
-        system_fonts = pygame.font.get_fonts()
-        
-        for fn in font_names:
-            if fn in system_fonts:
-                selected_font = fn
-                break
-        
+        font_name = "malgungothic"
+        if font_name not in pygame.font.get_fonts():
+            font_name = "arial"
+
         try:
-            self.fonts['default'] = pygame.font.SysFont(selected_font, 18)
-            self.fonts['bold'] = pygame.font.SysFont(selected_font, 20, bold=True)
-            self.fonts['large'] = pygame.font.SysFont(selected_font, 28)
-            self.fonts['title'] = pygame.font.SysFont(selected_font, 60)
-            self.fonts['small'] = pygame.font.SysFont(selected_font, 12)
+            self.fonts['default'] = pygame.font.SysFont(font_name, 18)
+            self.fonts['bold'] = pygame.font.SysFont(font_name, 20, bold=True)
+            self.fonts['large'] = pygame.font.SysFont(font_name, 28)
+            self.fonts['title'] = pygame.font.SysFont(font_name, 60)
+            self.fonts['small'] = pygame.font.SysFont(font_name, 12)
         except:
-            print("[ResourceManager] Failed to load system fonts, using pygame default")
+            self._log("WARNING", "Failed to load system fonts, using default")
             self.fonts['default'] = pygame.font.Font(None, 24)
             self.fonts['bold'] = pygame.font.Font(None, 26)
             self.fonts['large'] = pygame.font.Font(None, 36)
             self.fonts['title'] = pygame.font.Font(None, 70)
             self.fonts['small'] = pygame.font.Font(None, 16)
 
-    def load_image(self, path: str, alpha: bool = True):
+    def get_font(self, name):
+        return self.fonts.get(name, self.fonts['default'])
+
+    def get_image(self, path, use_alpha=True):
+        """이미지를 로드하고 디스플레이 포맷에 맞춰 최적화(convert)하여 반환"""
         if path in self.images:
             return self.images[path]
         
-        if not os.path.exists(path):
-            # 파일이 없으면 빈 Surface 반환 (에러 방지용)
-            print(f"[ResourceManager] Image not found: {path}")
-            surf = pygame.Surface((32, 32))
-            surf.fill((255, 0, 255)) # 마젠타 색상 (누락됨 표시)
-            self.images[path] = surf
-            return surf
-
         try:
+            if not os.path.exists(path):
+                self._log("ERROR", f"Image not found: {path}")
+                return None
+                
             img = pygame.image.load(path)
-            if alpha:
-                img = img.convert_alpha()
-            else:
-                img = img.convert()
+            # 로드 직후 포맷 변환 (블리팅 속도 5~10배 향상)
+            if pygame.display.get_surface(): # 디스플레이가 초기화된 경우에만 convert 가능
+                if use_alpha:
+                    img = img.convert_alpha()
+                else:
+                    img = img.convert()
+                
             self.images[path] = img
             return img
         except Exception as e:
-            print(f"[ResourceManager] Failed to load image {path}: {e}")
+            self._log("ERROR", f"Failed to load image: {path} / {e}")
             return None
-
-    def load_sound(self, path: str):
-        if path in self.sounds:
-            return self.sounds[path]
-
-        if not os.path.exists(path):
-            return None
-
-        try:
-            snd = pygame.mixer.Sound(path)
-            self.sounds[path] = snd
-            return snd
-        except Exception as e:
-            print(f"[ResourceManager] Failed to load sound {path}: {e}")
-            return None
-
-    def get_font(self, name: str, size: int = 20):
-        # 폰트 캐싱 키: "name_size"
-        key = f"{name}_{size}"
-        if key in self.fonts:
-            return self.fonts[key]
-        
-        # 시스템 폰트 로드 시도
-        try:
-            font = pygame.font.SysFont(name, size)
-            self.fonts[key] = font
-            return font
-        except:
-            return self.fonts['default']
-
-    def create_gradient_surface(self, radius: int, color: tuple):
-        """조명 효과 등을 위한 원형 그라데이션 서피스 생성"""
-        surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
-        for r in range(radius, 0, -2):
-            alpha = int(255 * (1 - (r / radius)))
-            pygame.draw.circle(surf, (*color, alpha), (radius, radius), r)
-        return surf
+            
+    def clear_cache(self):
+        self.images.clear()
+        # 폰트는 유지

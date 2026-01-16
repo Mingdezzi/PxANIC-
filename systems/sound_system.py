@@ -1,77 +1,141 @@
 import pygame
-from .base_system import BaseSystem
+import math
+import random
+from core.ecs_manager import ECSManager
+from core.event_bus import EventBus
+from core.game_state_manager import GameStateManager
 from core.resource_manager import ResourceManager
-from settings import TILE_SIZE
+from components.identity import Identity
+from components.common import Transform
+from settings import SOUND_INFO, TILE_SIZE, SCREEN_WIDTH, SCREEN_HEIGHT
 
-class SoundSystem(BaseSystem):
-    def __init__(self):
-        self.rm = ResourceManager.get_instance()
-        self.visual_sounds = [] # (x, y, radius, max_radius, alpha, source_role)
+class VisualSoundEffect:
+    def __init__(self, x, y, text, color, size_scale=1.0, duration=1500, shake=False, blink=False):
+        self.x = x
+        self.y = y
+        self.text = str(text)
+        self.color = color
+        self.duration = duration
+        self.start_time = pygame.time.get_ticks()
+        self.alive = True
+        self.shake = shake
+        self.blink = blink
+        
+        angle_deg = random.uniform(240, 300)
+        self.angle_rad = math.radians(angle_deg)
+        self.speed = 1.2 * size_scale
+        
+        self.resource_manager = ResourceManager.get_instance()
+        # 폰트 로드 (크기 비례)
+        font_size = int(max(16, (52 * size_scale) * 0.5))
+        self.font = pygame.font.SysFont("arial black", font_size, bold=True)
+        
+        self.normal_image = self._render_text(self.text, self.color)
+        self.blink_image = self._render_text(self.text, (255, 255, 255)) if blink else None
+        self.image = self.normal_image
+        
+        self.offset_x, self.offset_y = 0, 0
+        self.alpha = 255
 
-    def play_sound(self, name, x=None, y=None, role="UNKNOWN"):
-        sound_files = {
-            "FOOTSTEP": "assets/sounds/step.wav", "GUNSHOT": "assets/sounds/gunshot.wav",
-            "CLICK": "assets/sounds/click.wav", "CREAK": "assets/sounds/door_open.wav",
-            "SLAM": "assets/sounds/door_close.wav", "KA-CHING": "assets/sounds/buy.wav",
-            "CRUNCH": "assets/sounds/eat.wav", "GULP": "assets/sounds/drink.wav",
-            "STAB": "assets/sounds/stab.wav", "SCREAM": "assets/sounds/scream.wav",
-            "WORK": "assets/sounds/work.wav", "BEEP": "assets/sounds/beep.wav",
-            "ZAP": "assets/sounds/zap.wav"
-        }
-        path = sound_files.get(name)
-        if path:
-            snd = self.rm.load_sound(path)
-            if snd: snd.play()
+    def _render_text(self, text, color):
+        txt = self.font.render(text, True, color)
+        outline = self.font.render(text, True, (0, 0, 0))
+        w, h = txt.get_size()
+        s = pygame.Surface((w+4, h+4), pygame.SRCALPHA)
+        for dx, dy in [(-2,0), (2,0), (0,-2), (0,2)]: s.blit(outline, (dx+2, dy+2))
+        s.blit(txt, (2, 2))
+        return s
+
+    def update(self):
+        now = pygame.time.get_ticks()
+        elapsed = now - self.start_time
+        if elapsed > self.duration: self.alive = False; return
+        
+        progress = elapsed / self.duration
+        dist = self.speed * (elapsed / 12)
+        self.offset_x = math.cos(self.angle_rad) * dist
+        self.offset_y = math.sin(self.angle_rad) * dist + (progress**2 * 30)
+        
+        if self.shake:
+            intensity = 3 * (1 - progress)
+            self.offset_x += random.uniform(-intensity, intensity)
+            self.offset_y += random.uniform(-intensity, intensity)
             
-        if x is not None and y is not None:
-            self.add_visual_sound(x, y, name, role)
-
-    def add_visual_sound(self, x, y, sound_type, source_role):
-        max_radius = 50
-        if sound_type == "GUNSHOT": max_radius = 300
-        elif sound_type == "FOOTSTEP": max_radius = 30
-        elif sound_type == "SCREAM": max_radius = 200
-        elif sound_type == "ZAP": max_radius = 100
+        if self.blink and self.blink_image:
+            self.image = self.blink_image if (now // 200) % 2 == 0 else self.normal_image
             
-        self.visual_sounds.append({
-            'x': x, 'y': y, 'r': 5, 'max_r': max_radius,
-            'alpha': 255, 'role': source_role, 'type': sound_type
-        })
+        if progress > 0.6: self.alpha = int(255 * (1 - (progress - 0.6) / 0.4))
+        else: self.alpha = 255
+
+class SoundSystem:
+    def __init__(self, ecs: ECSManager, event_bus: EventBus):
+        self.ecs = ecs
+        self.event_bus = event_bus
+        self.visual_effects = []
+        self.event_bus.subscribe("PLAY_SOUND", self.handle_sound_event)
 
     def update(self, dt):
-        for vs in self.visual_sounds[:]:
-            vs['r'] += dt * 0.2
-            vs['alpha'] -= dt * 0.5
-            if vs['alpha'] <= 0 or vs['r'] >= vs['max_r']:
-                self.visual_sounds.remove(vs)
+        for fx in self.visual_effects[:]:
+            fx.update()
+            if not fx.alive: self.visual_effects.remove(fx)
 
-    def draw(self, screen, camera, listener_role="CITIZEN"):
-        # [복구] 청취자 직업에 따른 색상/중요도 로직
-        cx, cy = camera.x, camera.y
+    def handle_sound_event(self, data):
+        # data format: (s_type, x, y, radius, source_role)
+        if len(data) == 5: s_type, x, y, radius, source_role = data
+        else: s_type, x, y, radius = data; source_role = "UNKNOWN"
         
-        for vs in self.visual_sounds:
-            if not (cx - vs['max_r'] < vs['x'] < cx + camera.width + vs['max_r'] and
-                    cy - vs['max_r'] < vs['y'] < cy + camera.height + vs['max_r']):
-                continue
+        # Local Player 찾기 (청자)
+        players = [e for e in self.ecs.get_entities_with(Identity) if self.ecs.get_component(e, Identity).is_player]
+        if not players: return
+        player_id = players[0]
+        player_transform = self.ecs.get_component(player_id, Transform)
+        player_identity = self.ecs.get_component(player_id, Identity)
+        
+        dist = math.sqrt((player_transform.x - x)**2 + (player_transform.y - y)**2)
+        if dist > radius * 1.5: return # 안 들림
+        
+        # 주관적 시각화 로직 (Legacy Logic Preservation)
+        info = SOUND_INFO.get(s_type, {'base_rad': 5, 'color': (200, 200, 200)})
+        base_color = info['color']
+        my_role = player_identity.role
+        
+        importance = 1.0
+        final_color = base_color
+        shake = False
+        blink = False
+        
+        if my_role in ["CITIZEN", "DOCTOR"]:
+            if source_role == "MAFIA":
+                importance, final_color, shake = 2.0, (255, 50, 50), True
+                if s_type in ["BANG!", "SLASH", "SCREAM"]: importance = 2.5
+            elif source_role == "POLICE":
+                importance, final_color = 1.5, (50, 150, 255)
+        elif my_role == "MAFIA":
+            if source_role == "POLICE":
+                importance, final_color, blink = 2.5, (200, 50, 255), True
+            elif source_role in ["CITIZEN", "DOCTOR"]:
+                importance, final_color = 1.5, (255, 255, 100)
+        elif my_role == "POLICE":
+            if source_role == "MAFIA":
+                importance, final_color = 2.0, (255, 150, 0)
+        
+        if s_type in ["SIREN", "BOOM"]: importance, blink = 2.5, True
+        
+        dist_factor = max(0.2, 1.0 - (dist / (radius * 1.5)))
+        base_scale = radius / (6 * TILE_SIZE)
+        final_scale = max(0.5, min(2.5, base_scale * importance * dist_factor))
+        
+        self.visual_effects.append(VisualSoundEffect(x, y, s_type, final_color, final_scale, shake=shake, blink=blink))
 
-            color = (200, 200, 200) # 기본 회색
-            source_role = vs['role']
+    def draw(self, screen, camera):
+        for fx in self.visual_effects:
+            dx = fx.x - camera.x - (fx.image.get_width() // 2) + fx.offset_x
+            dy = fx.y - camera.y - (fx.image.get_height() // 2) + fx.offset_y
             
-            # 1. 시민/의사 입장
-            if listener_role in ["CITIZEN", "DOCTOR"]:
-                if source_role == "MAFIA": color = (255, 50, 50) # 적색 경보
-                elif source_role == "POLICE": color = (50, 150, 255) # 파란색 구조
-            
-            # 2. 마피아 입장
-            elif listener_role == "MAFIA":
-                if source_role == "POLICE": color = (200, 50, 255) # 보라색 경고
-                elif source_role in ["CITIZEN", "DOCTOR"]: color = (255, 255, 100) # 노란색 먹잇감
-                
-            # 3. 경찰 입장
-            elif listener_role == "POLICE":
-                if source_role == "MAFIA": color = (255, 150, 0) # 주황색 타겟
-
-            surf = pygame.Surface((int(vs['r']*2), int(vs['r']*2)), pygame.SRCALPHA)
-            alpha = max(0, min(255, int(vs['alpha'])))
-            pygame.draw.circle(surf, (*color, alpha), (int(vs['r']), int(vs['r'])), int(vs['r']), 2)
-            screen.blit(surf, (vs['x'] - cx - vs['r'], vs['y'] - cy - vs['r']))
+            # Alpha 적용
+            if fx.alpha < 255:
+                temp = fx.image.copy()
+                temp.set_alpha(fx.alpha)
+                screen.blit(temp, (dx, dy))
+            else:
+                screen.blit(fx.image, (dx, dy))

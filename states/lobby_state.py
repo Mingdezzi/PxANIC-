@@ -1,28 +1,31 @@
 import pygame
-from .base_state import BaseState
+import random
+from core.base_state import BaseState
 from core.resource_manager import ResourceManager
-from settings import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_PLAYERS, MAX_SPECTATORS, MAX_TOTAL_USERS, DEFAULT_PHASE_DURATIONS
 from colors import COLORS
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_PLAYERS, MAX_SPECTATORS, MAX_TOTAL_USERS, DEFAULT_PHASE_DURATIONS
 
 class LobbyState(BaseState):
-    def __init__(self, engine):
-        super().__init__(engine)
-        self.rm = ResourceManager.get_instance()
-        self.font = self.rm.get_font('default')
-        self.bold_font = self.rm.get_font('bold')
-        self.large_font = self.rm.get_font('large')
+    def __init__(self, game):
+        super().__init__(game)
+        self.resource_manager = ResourceManager.get_instance()
+        self.font = self.resource_manager.get_font('default')
+        self.bold_font = self.resource_manager.get_font('bold')
+        self.large_font = self.resource_manager.get_font('large')
 
         self.lobby_buttons = {}
-        
-        # Shared data init if not exists
-        if not hasattr(self.engine, 'shared_data'):
-            self.engine.shared_data = {}
-            
-        if 'participants' not in self.engine.shared_data:
-            self.engine.shared_data['participants'] = [{'name': 'Player 1', 'type': 'PLAYER', 'role': 'RANDOM', 'group': 'PLAYER'}]
-        
-        self.participants = self.engine.shared_data['participants']
-        self.time_scale = 100
+
+        if 'participants' not in self.game.shared_data:
+            self.game.shared_data['participants'] = [{'name': 'Player 1', 'type': 'PLAYER', 'role': 'RANDOM', 'group': 'PLAYER'}]
+        self.participants = self.game.shared_data['participants']
+
+        self.time_scale = 100  # Percentage (100 means 100% of DEFAULT_PHASE_DURATIONS)
+
+    def enter(self, params=None):
+        pass
+
+    def update(self, dt):
+        pass
 
     def draw(self, screen):
         self.lobby_buttons = {}
@@ -33,7 +36,6 @@ class LobbyState(BaseState):
         player_group = [p for p in self.participants if p['group'] == 'PLAYER']
         spectator_group = [p for p in self.participants if p['group'] == 'SPECTATOR']
 
-        # --- Left Panel (Players) ---
         left_area_x = 50
         left_area_w = 600
         start_y = 100
@@ -72,7 +74,6 @@ class LobbyState(BaseState):
             screen.blit(self.font.render("+ ADD PLAYER BOT", True, (255, 255, 255)), (add_rect.x+20, add_rect.y+8))
             self.lobby_buttons['ADD_BOT_PLAYER'] = add_rect
 
-        # --- Right Panel (Spectators) ---
         right_area_x = left_area_x + left_area_w + 50
         right_area_w = 400
 
@@ -103,27 +104,30 @@ class LobbyState(BaseState):
             screen.blit(self.font.render("+ ADD SPEC BOT", True, (255, 255, 255)), (add_rect.x+20, add_rect.y+8))
             self.lobby_buttons['ADD_BOT_SPEC'] = add_rect
 
-        # --- Time Scale ---
+        # Time Scale UI
         sx, sy = w - 450, h - 250
         pygame.draw.rect(screen, (30, 30, 40), (sx - 20, sy - 40, 420, 120))
         pygame.draw.rect(screen, (100, 100, 120), (sx - 20, sy - 40, 420, 120), 2)
         screen.blit(self.bold_font.render("TIME SETTINGS", True, (200, 200, 200)), (sx, sy - 30))
+
         screen.blit(self.font.render("TIME SCALE:", True, (255, 255, 255)), (sx, sy + 30))
         
+        # Minus Button
         m_rect = pygame.Rect(sx + 150, sy + 25, 30, 30)
         pygame.draw.rect(screen, COLORS['BUTTON'], m_rect)
         screen.blit(self.bold_font.render("-", True, (255,255,255)), (m_rect.x+10, m_rect.y+5))
         self.lobby_buttons["SCALE_MINUS"] = m_rect
 
+        # Scale Value
         val_txt = self.large_font.render(f"{self.time_scale}%", True, (0, 255, 0))
         screen.blit(val_txt, (sx + 200, sy + 20))
 
+        # Plus Button
         p_rect = pygame.Rect(sx + 300, sy + 25, 30, 30)
         pygame.draw.rect(screen, COLORS['BUTTON'], p_rect)
         screen.blit(self.bold_font.render("+", True, (255,255,255)), (p_rect.x+8, p_rect.y+5))
         self.lobby_buttons["SCALE_PLUS"] = p_rect
 
-        # --- Start Button ---
         start_rect = pygame.Rect(w - 250, h - 100, 200, 60)
         s_col = (0, 150, 0) if start_rect.collidepoint(mx, my) else (0, 100, 0)
         pygame.draw.rect(screen, s_col, start_rect)
@@ -138,16 +142,16 @@ class LobbyState(BaseState):
                 btns = self.lobby_buttons
 
                 if 'START' in btns and btns['START'].collidepoint(mx, my):
-                    # PlayState로 전환
-                    from .play_state import PlayState
-                    
+                    # Calculate durations based on Time Scale
                     scale = self.time_scale / 100.0
                     custom = {}
                     for k, v in DEFAULT_PHASE_DURATIONS.items():
                         custom[k] = int(v * scale)
-                    self.engine.shared_data['custom_durations'] = custom
                     
-                    self.engine.state_machine.change_state("PLAY", participants=self.participants)
+                    self.game.shared_data['custom_durations'] = custom
+
+                    from states.play_state import PlayState
+                    self.game.state_machine.change(PlayState(self.game))
 
                 if 'ADD_BOT_PLAYER' in btns and btns['ADD_BOT_PLAYER'].collidepoint(mx, my):
                     if len(self.participants) < MAX_TOTAL_USERS:

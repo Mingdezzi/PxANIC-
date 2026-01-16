@@ -125,14 +125,6 @@ class Dummy(Entity):
         self.suspicion_meter = {k: max(0, v - 30) for k, v in self.suspicion_meter.items()}
         self.device_battery = min(100, self.device_battery + 20)
 
-    def is_visible_villain(self, phase):
-        if phase not in ['NIGHT', 'DAWN']:
-            return False
-            
-        if self.role == 'MAFIA':
-            return True
-            
-        return False
 
     def _build_behavior_tree(self):
         survival_seq = Sequence([Condition(self.check_danger), Action(self.do_flee_or_hide)])

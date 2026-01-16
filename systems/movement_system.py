@@ -1,150 +1,113 @@
 import pygame
-import math
-from .base_system import BaseSystem
-from settings import *
+from core.ecs_manager import ECSManager
+from core.event_bus import EventBus
+from components.common import Transform, Velocity, Animation
+from components.status import StatusEffects
+from components.interaction import InteractionState
+from components.identity import Identity
+from world.map_manager import MapManager
+from settings import TILE_SIZE, SPEED_WALK, SPEED_RUN, SPEED_CROUCH, POLICE_SPEED_MULTI, NOISE_RADIUS
 from world.tiles import check_collision, BED_TILES, HIDEABLE_TILES
 
-class MovementSystem(BaseSystem):
-    def update(self, dt, entities, map_manager, weather_type='CLEAR'):
-        for entity in entities:
-            if not hasattr(entity, 'transform') or not hasattr(entity, 'physics'):
-                continue
-            
-            # 정지 상태(Stun) 체크
-            if hasattr(entity, 'stats') and entity.stats.status_effects.get('STUNNED'):
-                entity.physics.is_moving = False
-                continue
+class MovementSystem:
+    def __init__(self, ecs: ECSManager, map_manager: MapManager):
+        self.ecs = ecs
+        self.map_manager = map_manager
+        # EventBus is not passed in __init__ in PlayState, need to inject or get from somewhere.
+        # However, looking at PlayState, MovementSystem is initialized without EventBus.
+        # We need to change PlayState to pass EventBus or use a Singleton if available.
+        # But for now, let's assume we can get it via GameStateManager or just pass it in update? No.
+        # Let's fix PlayState first to pass EventBus to MovementSystem.
+        self.event_bus = None 
 
-            dx, dy = entity.physics.velocity
-            
-            # 이동 없음
-            if dx == 0 and dy == 0:
-                entity.physics.is_moving = False
-                # 스태미나 회복 로직 등은 StatsSystem에서 처리
-                continue
-            
-            entity.physics.is_moving = True
-            
-            # 속도 계산
-            speed = self._calculate_speed(entity, weather_type)
-            
-            # 대각선 이동 보정
-            if dx != 0 and dy != 0:
-                speed *= 0.7071
-                
-            move_x = dx * speed
-            move_y = dy * speed
-            
-            # 축별 이동 및 충돌 처리
-            self._move_single_axis(entity, move_x, 0, map_manager)
-            self._move_single_axis(entity, 0, move_y, map_manager)
-            
-            # 최종 위치 정수화 (렌더링 떨림 방지) -> rect 갱신
-            entity.transform.rect.x = int(entity.transform.x)
-            entity.transform.rect.y = int(entity.transform.y)
-
-    def _calculate_speed(self, entity, weather_type):
-        base_speed = SPEED_WALK
-        if entity.physics.move_state == "RUN": base_speed = SPEED_RUN
-        elif entity.physics.move_state == "CROUCH": base_speed = SPEED_CROUCH
+    def update(self, dt):
+        entities = self.ecs.get_entities_with(Transform, Velocity, StatusEffects, Animation, Identity)
         
+        for entity_id in entities:
+            transform = self.ecs.get_component(entity_id, Transform)
+            velocity = self.ecs.get_component(entity_id, Velocity)
+            status = self.ecs.get_component(entity_id, StatusEffects)
+            anim = self.ecs.get_component(entity_id, Animation)
+            identity = self.ecs.get_component(entity_id, Identity)
+
+            interaction = self.ecs.get_component(entity_id, InteractionState)
+            if status.stun_timer > pygame.time.get_ticks(): continue
+            if interaction and interaction.is_working: continue
+            if status.is_hiding: continue
+
+            if velocity.dx == 0 and velocity.dy == 0: continue
+
+            if velocity.speed_modifier >= 1.5: base_speed = SPEED_RUN; move_state = "RUN"
+            elif velocity.speed_modifier <= 0.5: base_speed = SPEED_CROUCH; move_state = "CROUCH"
+            else: base_speed = SPEED_WALK; move_state = "WALK"
+            
+            final_speed = self._calculate_speed(entity_id, base_speed, status, identity)
+            
+            move_x = velocity.dx * final_speed
+            move_y = velocity.dy * final_speed
+            
+            if velocity.dx > 0: anim.facing_dir = (1, 0)
+            elif velocity.dx < 0: anim.facing_dir = (-1, 0)
+            elif velocity.dy > 0: anim.facing_dir = (0, 1)
+            elif velocity.dy < 0: anim.facing_dir = (0, -1)
+
+            transform.x += move_x; self._handle_collision(transform, True)
+            transform.y += move_y; self._handle_collision(transform, False)
+            
+            map_w_px = self.map_manager.width * TILE_SIZE
+            map_h_px = self.map_manager.height * TILE_SIZE
+            transform.x = max(0, min(transform.x, map_w_px - transform.width))
+            transform.y = max(0, min(transform.y, map_h_px - transform.height))
+
+            # 발소리 생성
+            if self.event_bus:
+                self._generate_footstep_sound(entity_id, move_state, transform, status, identity)
+
+    def _generate_footstep_sound(self, entity_id, move_state, transform, status, identity):
+        now = pygame.time.get_ticks()
+        
+        step_interval = 600 if move_state == "WALK" else (300 if move_state == "RUN" else 800)
+        
+        if now > status.sound_timers['FOOTSTEP']:
+            status.sound_timers['FOOTSTEP'] = now + step_interval
+            
+            s_type = "THUD" if move_state == "RUN" else ("RUSTLE" if move_state == "CROUCH" else "FOOTSTEP")
+            radius = NOISE_RADIUS.get(move_state, 0)
+            
+            if status.buffs['SILENT']: radius *= 0.7
+            # Weather check needs TimeSystem or GlobalState access. Omitted for now or need refactoring.
+            
+            if radius > 0:
+                self.event_bus.publish("PLAY_SOUND", (s_type, transform.x + transform.width//2, transform.y + transform.height//2, radius, identity.role))
+
+    def _calculate_speed(self, entity_id, base_speed, status, identity):
         multiplier = 1.0
-        if not hasattr(entity, 'stats') or not hasattr(entity, 'role'):
-            return base_speed
-
-        emotions = entity.stats.emotions
-        buffs = entity.stats.status_effects
-        
-        # 1. 긍정적 효과
+        emotions = status.emotions
         if 'HAPPINESS' in emotions: multiplier += 0.10
-        if 'DOPAMINE' in emotions:
-            level = emotions['DOPAMINE']
-            bonus = [0, 0.05, 0.10, 0.15, 0.20, 0.30] # 레벨별 보너스
-            multiplier += bonus[min(level, 5)]
-        if 'RAGE' in emotions:
-            level = emotions['RAGE']
-            bonus = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
-            multiplier += bonus[min(level, 5)]
-
-        # 2. 부정적 효과
+        if 'DOPAMINE' in emotions: multiplier += [0, 0.05, 0.10, 0.15, 0.20, 0.30][min(5, emotions['DOPAMINE'])]
+        if 'RAGE' in emotions: multiplier += [0, 0.05, 0.10, 0.15, 0.20, 0.30][min(5, emotions['RAGE'])]
         if 'FEAR' in emotions: multiplier -= 0.30
+        if 'FATIGUE' in emotions: multiplier -= [0, 0.05, 0.10, 0.15, 0.20, 0.30][min(5, emotions['FATIGUE'])]
+        if 'PAIN' in emotions and not status.buffs['NO_PAIN']: multiplier -= [0, 0.05, 0.10, 0.15, 0.20, 0.30][min(5, emotions['PAIN'])]
         
-        if 'FATIGUE' in emotions:
-            level = emotions['FATIGUE']
-            penalty = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
-            multiplier -= penalty[min(level, 5)]
-            
-        if 'PAIN' in emotions and not buffs.get('NO_PAIN'):
-            level = emotions['PAIN']
-            penalty = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
-            multiplier -= penalty[min(level, 5)]
-
-        # 3. 직업 및 기타 보정
-        if entity.role.main_role == "POLICE": multiplier *= POLICE_SPEED_MULTI
-        if buffs.get('FAST_WORK'): multiplier *= 1.2
-        if weather_type == 'SNOW': multiplier *= 0.8
-        
+        if identity.role == "POLICE": multiplier *= POLICE_SPEED_MULTI
+        if status.buffs['FAST_WORK']: multiplier *= 1.2
         return base_speed * max(0.2, multiplier)
 
-    def _move_single_axis(self, entity, dx, dy, map_manager):
-        # 1. 위치 이동
-        entity.transform.x += dx
-        entity.transform.y += dy
-        
-        # Rect 갱신 (충돌 체크용)
-        # 히트박스 보정: 기존 코드처럼 rect를 약간 줄여서 사용
-        # entity.rect는 32x32지만 실제 충돌 판정은 +6, +6, -12, -12
-        cx = entity.transform.x + 6
-        cy = entity.transform.y + 6
-        cw = TILE_SIZE - 12
-        ch = TILE_SIZE - 12
-        hitbox = pygame.Rect(cx, cy, cw, ch)
-        
-        # 2. 맵 경계 체크
-        map_w_px = map_manager.width * TILE_SIZE
-        map_h_px = map_manager.height * TILE_SIZE
-        
-        if hitbox.left < 0: 
-            entity.transform.x = -6
-            hitbox.x = 0
-        elif hitbox.right > map_w_px:
-            entity.transform.x = map_w_px - TILE_SIZE + 6
-            hitbox.right = map_w_px
-            
-        if hitbox.top < 0:
-            entity.transform.y = -6
-            hitbox.y = 0
-        elif hitbox.bottom > map_h_px:
-            entity.transform.y = map_h_px - TILE_SIZE + 6
-            hitbox.bottom = map_h_px
-            
-        # 3. 타일 충돌 체크
-        if entity.physics.no_clip: return
-
-        # 충돌 검사 범위
-        start_gx = max(0, int(hitbox.left // TILE_SIZE))
-        end_gx = min(map_manager.width, int(hitbox.right // TILE_SIZE) + 1)
-        start_gy = max(0, int(hitbox.top // TILE_SIZE))
-        end_gy = min(map_manager.height, int(hitbox.bottom // TILE_SIZE) + 1)
+    def _handle_collision(self, transform, horizontal):
+        rect = transform.rect
+        start_gx = max(0, rect.left // TILE_SIZE); end_gx = min(self.map_manager.width, (rect.right // TILE_SIZE) + 1)
+        start_gy = max(0, rect.top // TILE_SIZE); end_gy = min(self.map_manager.height, (rect.bottom // TILE_SIZE) + 1)
         
         for y in range(start_gy, end_gy):
             for x in range(start_gx, end_gx):
-                if map_manager.check_any_collision(x, y):
-                    # 충돌 대상 타일 Rect
+                if self.map_manager.check_any_collision(x, y):
                     tile_rect = pygame.Rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-                    
-                    if hitbox.colliderect(tile_rect):
-                        # 충돌 해결 및 위치 보정
-                        if dx > 0: # 오른쪽 이동 중 충돌
-                            hitbox.right = tile_rect.left
-                            entity.transform.x = hitbox.x - 6
-                        elif dx < 0: # 왼쪽 이동 중 충돌
-                            hitbox.left = tile_rect.right
-                            entity.transform.x = hitbox.x - 6
-                            
-                        if dy > 0: # 아래쪽 이동 중 충돌
-                            hitbox.bottom = tile_rect.top
-                            entity.transform.y = hitbox.y - 6
-                        elif dy < 0: # 위쪽 이동 중 충돌
-                            hitbox.top = tile_rect.bottom
-                            entity.transform.y = hitbox.y - 6
+                    if rect.colliderect(tile_rect):
+                        if horizontal:
+                            if rect.centerx < tile_rect.centerx: transform.x = tile_rect.left - transform.width
+                            else: transform.x = tile_rect.right
+                        else:
+                            if rect.centery < tile_rect.centery: transform.y = tile_rect.top - transform.height
+                            else: transform.y = tile_rect.bottom
+                        rect = transform.rect

@@ -896,4 +896,41 @@ NEW_ID_MAP = {
 }
 
 BED_TILES = [8321211, 9322009]
+
 HIDEABLE_TILES = [6310104, 8310208, 8320209, 8320210, 8321211, 8320212]
+
+VENDING_MACHINE_TID = 8321006
+
+CCTV_TID = 7310011
+
+
+
+WORK_SEQ = {
+
+    'FARMER': [9312000, 9312001, 9312002], # Empty -> Sprout -> Harvest
+
+    'MINER': [9322004, 9322005, 9322006],  # Ore -> Rubble -> Furnace
+
+    'FISHER': [9312003, 9322007, 8320205], # Spot -> Cutting Board -> Fridge
+
+    'DOCTOR': [9322008, 9322009, 9322011], # Microscope -> Surgery Table -> Computer
+
+}
+
+
+
+MINIGAME_MAP = {
+
+    'FARMER': {0: 'MASHING', 1: 'CIRCLE', 2: 'TIMING'},
+
+    'MINER': {0: 'MASHING', 1: 'CIRCLE', 2: 'TIMING'},
+
+    'FISHER': {0: 'MASHING', 1: 'TIMING', 2: 'FREQUENCY'},
+
+    'DOCTOR': {0: 'WIRING', 1: 'MEMORY', 2: 'CIRCLE'},
+
+    'COMMON': {'LOCKPICK': 'WIRING', 'REPAIR': 'WIRING', 'BREAK': 'MASHING'}
+
+}
+
+

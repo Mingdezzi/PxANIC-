@@ -1,6 +1,6 @@
 import pygame
 from core.base_state import BaseState
-from managers.resource_manager import ResourceManager
+from core.resource_manager import ResourceManager
 from colors import COLORS
 from settings import SCREEN_WIDTH, SCREEN_HEIGHT
 

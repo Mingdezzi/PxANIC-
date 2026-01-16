@@ -159,7 +159,6 @@ MINIGAME_MAP = {
 }
 
 BED_TILES = [8321211, 9322009]
-HIDEABLE_TILES = [6310104, 8310208, 8320209, 8320210, 8321211, 8320212]
 
 # Hiding logic is now handled dynamically based on Tile ID structure (5th digit E)
 # E=1: Passive Hide, E=2: Active Hide
