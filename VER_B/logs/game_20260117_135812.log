@@ -1,0 +1,6 @@
+2026-01-17 13:58:12,523 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 13:58:12,574 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 13:58:18,031 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 13:58:18,084 - [INFO] - [PLAYER] Initialized at (1504, 1664) Role: CITIZEN
+2026-01-17 13:58:18,085 - [INFO] - [PLAYER] Role changed to MAFIA (None)
+2026-01-17 13:58:24,965 - [INFO] - [SYSTEM] Engine Shutting Down

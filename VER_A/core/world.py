@@ -1,0 +1,98 @@
+import random
+from world.map_manager import MapManager
+from entities.player import Player
+from entities.npc import Dummy
+from settings import TILE_SIZE, ZONES
+
+class GameWorld:
+    def __init__(self, game):
+        self.game = game
+        self.map_manager = MapManager()
+        self.player = None
+        self.npcs = []
+        self.bullets = []
+        self.effects = []
+        self.indicators = []
+        self.noise_list = []
+        self.bloody_footsteps = []
+        
+        # Events
+        self.is_blackout = False
+        self.blackout_timer = 0
+        self.is_mafia_frozen = False
+        self.frozen_timer = 0
+        self.has_murder_occurred = False
+
+    def load_map(self, filename="map.json"):
+        self.map_manager.load_map(filename)
+
+    def find_safe_spawn(self):
+        c = self.map_manager.get_spawn_points(zone_id=1)
+        return random.choice(c) if c else (100, 100)
+
+    def init_entities(self):
+        participants = self.game.shared_data.get('participants', [])
+        cit_jobs = ["FARMER", "MINER", "FISHER"]
+
+        random_indices = [i for i, p in enumerate(participants) if p['group'] == 'PLAYER' and p['role'] == 'RANDOM']
+        if random_indices:
+            r_pool = ["MAFIA", "POLICE", "DOCTOR"]
+            while len(r_pool) < len(random_indices): r_pool.append("CITIZEN")
+            if len(participants) >= 4 and "MAFIA" not in [p['role'] for p in participants if p['role'] != 'RANDOM']:
+                if "MAFIA" not in r_pool: r_pool[0] = "MAFIA"
+            
+            random.shuffle(r_pool)
+            for p in participants:
+                if p['role'] in r_pool: r_pool.remove(p['role'])
+            random.shuffle(random_indices)
+            for idx in random_indices:
+                if r_pool: participants[idx]['role'] = r_pool.pop(0)
+                else: participants[idx]['role'] = random.choice(cit_jobs)
+
+        sx, sy = self.find_safe_spawn()
+        self.player = Player(sx, sy, self.map_manager.width, self.map_manager.height, None, self.map_manager.zone_map, map_manager=self.map_manager)
+        self.player.is_player = True
+
+        my_data = next((p for p in participants if p['type'] == 'PLAYER'), None)
+        if my_data:
+            self.player.name = my_data['name']
+            if my_data['group'] == 'SPECTATOR':
+                self.player.change_role("SPECTATOR")
+            else:
+                if my_data['role'] in cit_jobs: self.player.change_role("CITIZEN", my_data['role'])
+                else: self.player.change_role(my_data['role'])
+
+        self.npcs = []
+        for p in participants:
+            if p['type'] == 'BOT':
+                if p['group'] == 'SPECTATOR':
+                    pass
+                else:
+                    nx, ny = self.find_safe_spawn()
+                    rt = "CITIZEN" if p['role'] in cit_jobs else p['role']
+                    n = Dummy(nx, ny, None, self.map_manager.width, self.map_manager.height, name=p['name'], role=rt, zone_map=self.map_manager.zone_map, map_manager=self.map_manager)
+                    if p['role'] in cit_jobs: n.sub_role = p['role']
+                    n.vote_count = 0 
+                    self.npcs.append(n)
+
+    def update(self, dt, current_phase, weather, day_count):
+        # Update Event Timers
+        now = self.game.get_ticks() if hasattr(self.game, 'get_ticks') else pygame.time.get_ticks()
+        
+        if self.is_blackout and now > self.blackout_timer: self.is_blackout = False
+        if self.is_mafia_frozen and now > self.frozen_timer: self.is_mafia_frozen = False
+
+        self.map_manager.update_doors(dt, [self.player] + self.npcs)
+        
+        # Bloody Footsteps cleanup
+        self.bloody_footsteps = [bf for bf in self.bloody_footsteps if now < bf[2]]
+
+        # Effects & Indicators cleanup
+        for e in self.effects[:]: e.update()
+        self.effects = [e for e in self.effects if e.alive]
+        
+        for i in self.indicators[:]: 
+            i.update()
+            if not i.alive: self.indicators.remove(i)
+
+import pygame # Needed for ticks

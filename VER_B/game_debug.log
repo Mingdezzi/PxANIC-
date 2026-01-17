@@ -1,0 +1,102 @@
+23:50:39.490 | INFO    | [SYSTEM    ] Game Engine Initializing...
+23:50:39.546 | INFO    | [SYSTEM    ] Engine Loop Started
+23:50:46.549 | INFO    | [PLAY      ] Entering PlayState...
+23:50:46.568 | INFO    | [PLAYER    ] Initialized at (1472, 1536) Role: CITIZEN
+23:50:46.569 | INFO    | [PLAYER    ] Role changed to CITIZEN (FARMER)
+23:50:46.574 | INFO    | [GAME      ] Weather set to: CLEAR
+23:50:47.121 | DEBUG   | [PLAYER    ] Device toggled: True
+23:50:47.618 | DEBUG   | [PLAYER    ] Device toggled: False
+23:50:47.918 | DEBUG   | [PLAYER    ] Device toggled: True
+23:50:48.317 | DEBUG   | [PLAYER    ] Device toggled: False
+23:50:49.372 | DEBUG   | [PLAYER    ] Device toggled: True
+23:50:49.716 | DEBUG   | [PLAYER    ] Device toggled: False
+23:50:52.500 | DEBUG   | [INPUT     ] E Key Pressed
+23:50:52.599 | DEBUG   | [INPUT     ] E Key Released (Hold: 98ms) Target: (46, 54)
+23:50:52.599 | INFO    | [PLAYER    ] Interact with 8321006 at (46, 54) Mode: short
+23:50:53.082 | DEBUG   | [INPUT     ] E Key Pressed
+23:50:53.165 | DEBUG   | [INPUT     ] E Key Released (Hold: 83ms) Target: (46, 54)
+23:50:53.165 | INFO    | [PLAYER    ] Interact with 8321006 at (46, 54) Mode: short
+23:50:56.383 | INFO    | [PLAYER    ] Morning Process Complete
+23:51:04.826 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:04.909 | DEBUG   | [INPUT     ] E Key Released (Hold: 82ms) Target: (17, 7)
+23:51:04.909 | INFO    | [PLAYER    ] Interact with 9312000 at (17, 7) Mode: short
+23:51:07.926 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:08.007 | DEBUG   | [INPUT     ] E Key Released (Hold: 80ms) Target: (13, 7)
+23:51:08.007 | INFO    | [PLAYER    ] Interact with 9312000 at (13, 7) Mode: short
+23:51:10.912 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:10.978 | DEBUG   | [INPUT     ] E Key Released (Hold: 66ms) Target: (8, 8)
+23:51:10.978 | INFO    | [PLAYER    ] Interact with 9312000 at (8, 8) Mode: short
+23:51:13.788 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:13.885 | DEBUG   | [INPUT     ] E Key Released (Hold: 98ms) Target: (9, 4)
+23:51:13.886 | INFO    | [PLAYER    ] Interact with 9312000 at (9, 4) Mode: short
+23:51:16.799 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:16.848 | DEBUG   | [INPUT     ] E Key Released (Hold: 49ms) Target: (14, 5)
+23:51:16.848 | INFO    | [PLAYER    ] Interact with 9312000 at (14, 5) Mode: short
+23:51:20.562 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:20.699 | DEBUG   | [INPUT     ] E Key Released (Hold: 136ms) Target: (15, 13)
+23:51:20.699 | INFO    | [PLAYER    ] Interact with 5321206 at (15, 13) Mode: short
+23:51:35.552 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:35.668 | DEBUG   | [INPUT     ] E Key Released (Hold: 117ms) Target: (39, 59)
+23:51:35.668 | INFO    | [PLAYER    ] Interact with 5321025 at (39, 59) Mode: short
+23:51:36.132 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:37.529 | DEBUG   | [INPUT     ] E Key Released (Hold: 1397ms) Target: (39, 59)
+23:51:37.529 | INFO    | [PLAYER    ] Interact with 5321025 at (39, 59) Mode: long
+23:51:48.001 | DEBUG   | [INPUT     ] E Key Pressed
+23:51:48.100 | DEBUG   | [INPUT     ] E Key Released (Hold: 99ms) Target: (53, 45)
+23:51:48.100 | INFO    | [PLAYER    ] Interact with 8321006 at (53, 45) Mode: short
+23:52:00.618 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:00.740 | DEBUG   | [INPUT     ] E Key Released (Hold: 122ms) Target: (79, 47)
+23:52:00.740 | INFO    | [PLAYER    ] Interact with 5323024 at (79, 47) Mode: short
+23:52:01.863 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:01.957 | DEBUG   | [INPUT     ] E Key Released (Hold: 95ms) Target: (78, 47)
+23:52:01.958 | INFO    | [PLAYER    ] Interact with 5321010 at (78, 47) Mode: short
+23:52:02.508 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:02.629 | DEBUG   | [INPUT     ] E Key Released (Hold: 121ms) Target: (78, 47)
+23:52:02.629 | INFO    | [PLAYER    ] Interact with 5310004 at (78, 47) Mode: short
+23:52:03.670 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:03.767 | DEBUG   | [INPUT     ] E Key Released (Hold: 98ms) Target: (78, 47)
+23:52:03.767 | INFO    | [PLAYER    ] Interact with 5321010 at (78, 47) Mode: short
+23:52:10.290 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:10.413 | DEBUG   | [INPUT     ] E Key Released (Hold: 122ms) Target: (88, 53)
+23:52:10.692 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:10.812 | DEBUG   | [INPUT     ] E Key Released (Hold: 120ms) Target: (88, 53)
+23:52:11.406 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:11.480 | DEBUG   | [INPUT     ] E Key Released (Hold: 74ms) Target: (87, 53)
+23:52:11.688 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:11.784 | DEBUG   | [INPUT     ] E Key Released (Hold: 97ms) Target: (87, 53)
+23:52:15.992 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:16.087 | DEBUG   | [INPUT     ] E Key Released (Hold: 95ms) Target: (95, 53)
+23:52:28.782 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:28.925 | DEBUG   | [INPUT     ] E Key Released (Hold: 143ms) Target: (93, 54)
+23:52:28.925 | INFO    | [PLAYER    ] Interact with 5321207 at (93, 54) Mode: short
+23:52:31.718 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:32.958 | DEBUG   | [INPUT     ] E Key Released (Hold: 1239ms) Target: (95, 61)
+23:52:32.958 | INFO    | [PLAYER    ] Interact with 5321025 at (95, 61) Mode: long
+23:52:42.211 | DEBUG   | [PLAYER    ] Device toggled: True
+23:52:45.025 | DEBUG   | [PLAYER    ] Device toggled: False
+23:52:48.713 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:48.845 | DEBUG   | [INPUT     ] E Key Released (Hold: 133ms) Target: (93, 54)
+23:52:48.845 | INFO    | [PLAYER    ] Interact with 5321207 at (93, 54) Mode: short
+23:52:56.405 | INFO    | [PLAYER    ] Morning Process Complete
+23:52:56.647 | DEBUG   | [INPUT     ] E Key Pressed
+23:52:56.782 | DEBUG   | [INPUT     ] E Key Released (Hold: 135ms) Target: (52, 45)
+23:52:56.782 | INFO    | [PLAYER    ] Interact with 8321006 at (52, 45) Mode: short
+23:53:05.925 | DEBUG   | [INPUT     ] E Key Pressed
+23:53:06.043 | DEBUG   | [INPUT     ] E Key Released (Hold: 118ms) Target: (52, 45)
+23:53:06.043 | INFO    | [PLAYER    ] Interact with 8321006 at (52, 45) Mode: short
+23:53:08.957 | DEBUG   | [INPUT     ] E Key Pressed
+23:53:09.085 | DEBUG   | [INPUT     ] E Key Released (Hold: 129ms) Target: (52, 45)
+23:53:09.086 | INFO    | [PLAYER    ] Interact with 8321006 at (52, 45) Mode: short
+23:53:22.243 | DEBUG   | [PLAYER    ] Device toggled: True
+23:53:22.755 | DEBUG   | [PLAYER    ] Device toggled: False
+23:53:23.106 | DEBUG   | [PLAYER    ] Device toggled: True
+23:53:32.315 | DEBUG   | [PLAYER    ] Device toggled: False
+23:53:32.928 | DEBUG   | [INPUT     ] E Key Pressed
+23:53:33.082 | DEBUG   | [INPUT     ] E Key Released (Hold: 155ms) Target: (46, 41)
+23:53:33.082 | INFO    | [PLAYER    ] Interact with 5321207 at (46, 41) Mode: short
+23:53:36.468 | DEBUG   | [PLAYER    ] Device toggled: True
+23:53:37.310 | DEBUG   | [PLAYER    ] Device toggled: False
+23:53:38.916 | DEBUG   | [INPUT     ] E Key Pressed
+23:53:39.034 | DEBUG   | [INPUT     ] E Key Released (Hold: 118ms) Target: (46, 41)
+23:53:39.034 | INFO    | [PLAYER    ] Interact with 5321207 at (46, 41) Mode: short
+23:53:41.708 | INFO    | [SYSTEM    ] Engine Shutting Down
