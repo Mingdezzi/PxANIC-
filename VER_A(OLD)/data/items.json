@@ -1,0 +1,104 @@
+{
+    "TANGERINE": {
+        "name": "귤",
+        "price": 3,
+        "desc": "HP +2",
+        "key": 49
+    },
+    "CHOCOBAR": {
+        "name": "초코바",
+        "price": 3,
+        "desc": "AP +2",
+        "key": 50
+    },
+    "TORTILLA": {
+        "name": "치즈또띠아",
+        "price": 7,
+        "desc": "HP +3, AP +3",
+        "key": 51
+    },
+    "MEDKIT": {
+        "name": "구급키트",
+        "price": 15,
+        "desc": "HP Full Recovery",
+        "key": 52
+    },
+    "ENERGY_DRINK": {
+        "name": "에너지드링크",
+        "price": 10,
+        "desc": "HP -3, Infinite Stamina (Night)",
+        "key": 53
+    },
+    "PEANUT_BUTTER": {
+        "name": "땅콩버터",
+        "price": 15,
+        "desc": "Noise -30% (Night)",
+        "key": 54
+    },
+    "COFFEE": {
+        "name": "커피",
+        "price": 8,
+        "desc": "Job Speed x2",
+        "key": 55
+    },
+    "PAINKILLER": {
+        "name": "진통제",
+        "price": 12,
+        "desc": "Ignore Pain Penalty",
+        "key": 56
+    },
+    "BATTERY": {
+        "name": "건전지",
+        "price": 3,
+        "desc": "Battery +50%",
+        "key": 57
+    },
+    "POWERBANK": {
+        "name": "보조배터리",
+        "price": 10,
+        "desc": "Battery +100% (2 Uses)",
+        "key": 48
+    },
+    "KEY": {
+        "name": "열쇠",
+        "price": 5,
+        "desc": "Open Locked Door",
+        "key": 45
+    },
+    "MASTER_KEY": {
+        "name": "만능키",
+        "price": 20,
+        "desc": "Open Locked Door (3 Uses)",
+        "key": 61
+    },
+    "SMOKE_BOMB": {
+        "name": "연막탄",
+        "price": 10,
+        "desc": "Auto-Smoke on Danger",
+        "key": null
+    },
+    "ARMOR": {
+        "name": "방탄방검복",
+        "price": 30,
+        "desc": "Block 1 Attack",
+        "key": null
+    },
+    "POTION": {
+        "name": "소생약",
+        "price": 50,
+        "desc": "Revive Next Morning",
+        "key": null
+    },
+    "TASER": {
+        "name": "테이저건",
+        "price": 25,
+        "desc": "Stun Enemy 3s (1 Use)",
+        "key": null
+    },
+    "TRAP": {
+        "name": "덫",
+        "price": 10,
+        "desc": "Place Trap (Stun 3s)",
+        "key": null
+    }
+}

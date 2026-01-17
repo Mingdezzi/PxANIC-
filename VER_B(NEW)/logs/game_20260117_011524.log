@@ -1,0 +1,14 @@
+2026-01-17 01:15:24,218 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 01:15:24,232 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 01:15:29,022 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 01:15:29,043 - [INFO] - [PLAYER] Initialized at (1536, 1568) Role: CITIZEN
+2026-01-17 01:15:29,045 - [INFO] - [PLAYER] Role changed to DOCTOR (None)
+2026-01-17 01:15:29,047 - [INFO] - [GAME] Weather set to: CLEAR
+2026-01-17 01:15:34,493 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 01:15:34,606 - [DEBUG] - [INPUT] E Key Released (Hold: 117ms) Target: (59, 46)
+2026-01-17 01:15:34,615 - [INFO] - [PLAYER] Interact with 5321008 at (59, 46) Mode: short
+2026-01-17 01:15:38,603 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 01:15:38,676 - [DEBUG] - [INPUT] E Key Released (Hold: 68ms) Target: (69, 44)
+2026-01-17 01:15:38,676 - [INFO] - [PLAYER] Interact with 9322008 at (69, 44) Mode: short
+2026-01-17 01:15:48,859 - [INFO] - [PLAYER] Morning Process Complete
+2026-01-17 01:15:52,509 - [INFO] - [SYSTEM] Engine Shutting Down
