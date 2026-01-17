@@ -1,6 +1,0 @@
-2026-01-17 13:38:58,416 - [INFO] - [SYSTEM] Game Engine Initializing...
-2026-01-17 13:38:58,456 - [INFO] - [SYSTEM] Engine Loop Started
-2026-01-17 13:39:04,518 - [INFO] - [PLAY] Entering PlayState...
-2026-01-17 13:39:04,573 - [INFO] - [PLAYER] Initialized at (1504, 1696) Role: CITIZEN
-2026-01-17 13:39:04,574 - [INFO] - [PLAYER] Role changed to POLICE (None)
-2026-01-17 13:39:07,589 - [INFO] - [SYSTEM] Engine Shutting Down

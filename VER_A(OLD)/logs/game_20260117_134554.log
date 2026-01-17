@@ -1,6 +1,0 @@
-2026-01-17 13:45:54,969 - [INFO] - [SYSTEM] Game Engine Initializing...
-2026-01-17 13:45:55,006 - [INFO] - [SYSTEM] Engine Loop Started
-2026-01-17 13:46:00,118 - [INFO] - [PLAY] Entering PlayState...
-2026-01-17 13:46:00,172 - [INFO] - [PLAYER] Initialized at (1632, 1568) Role: CITIZEN
-2026-01-17 13:46:00,173 - [INFO] - [PLAYER] Role changed to CITIZEN (MINER)
-2026-01-17 13:46:13,034 - [INFO] - [SYSTEM] Engine Shutting Down

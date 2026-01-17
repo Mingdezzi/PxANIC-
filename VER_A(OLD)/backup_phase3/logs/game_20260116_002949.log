@@ -1,8 +1,0 @@
-2026-01-16 00:29:49,587 - [INFO] - [SYSTEM] Game Engine Initializing...
-2026-01-16 00:29:49,603 - [INFO] - [SYSTEM] Engine Loop Started
-2026-01-16 00:29:57,619 - [INFO] - [PLAY] Entering PlayState...
-2026-01-16 00:29:57,639 - [INFO] - [PLAYER] Initialized at (1504, 1664) Role: CITIZEN
-2026-01-16 00:29:57,639 - [INFO] - [PLAYER] Role changed to MAFIA (None)
-2026-01-16 00:29:57,644 - [INFO] - [GAME] Weather set to: RAIN
-2026-01-16 00:30:07,474 - [INFO] - [PLAYER] Morning Process Complete
-2026-01-16 00:30:08,710 - [INFO] - [SYSTEM] Engine Shutting Down
