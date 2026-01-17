@@ -14,8 +14,6 @@ from colors import COLORS
 from managers.resource_manager import ResourceManager
 from ui import UI
 from entities.bullet import Bullet
-from systems.debug_console import DebugConsole
-from entities.npc import Dummy
 
 class PlayState(BaseState):
     def __init__(self, game):
@@ -27,7 +25,6 @@ class PlayState(BaseState):
         self.world = GameWorld(game)
         self.time_system = TimeSystem(game)
         self.lighting = LightingManager(self)
-        self.console = DebugConsole(game, self)
 
         self.map_renderer = None
         self.camera = None
@@ -51,7 +48,6 @@ class PlayState(BaseState):
         # [Logic Timers]
         self.heartbeat_timer = 0
         self.blink_timer = 0
-        self.last_sent_pos = (0, 0)
 
         # [Callbacks Setup]
         self.time_system.on_phase_change = self.on_phase_change
@@ -97,24 +93,6 @@ class PlayState(BaseState):
         self.world.init_entities()
         self.time_system.init_timer() 
 
-        # [Multiplayer Setup]
-        if hasattr(self.game, 'network') and self.game.network.connected:
-            my_id = self.game.network.my_id
-            self.player.uid = my_id
-            print(f"[PLAY] Assigned Network ID {my_id} to Player")
-            
-            participants = self.game.shared_data.get('participants', [])
-            npc_idx = 0
-            for p in participants:
-                pid = p['id']
-                if pid == my_id: continue
-                if npc_idx < len(self.npcs):
-                    self.npcs[npc_idx].uid = pid
-                    self.npcs[npc_idx].name = p['name']
-                    self.npcs[npc_idx].is_master = False # Remote player
-                    self.world.register_entity(self.npcs[npc_idx])
-                    npc_idx += 1
-
         self.ui = UI(self)
         
         if self.weather == 'RAIN': self.ui.show_alert("It's Raining...", (100, 100, 255))
@@ -149,26 +127,6 @@ class PlayState(BaseState):
             self.ui.show_alert("YOU DIED!", (255, 0, 0))
             self.player.change_role("SPECTATOR")
 
-        # [Network] Receive Packets
-        if hasattr(self.game, 'network') and self.game.network.connected:
-            events = self.game.network.get_events()
-            for e in events:
-                ptype = e.get('type')
-                sender_id = e.get('id')
-                if ptype == 'MOVE':
-                    if sender_id in self.world.entities_by_id:
-                        ent = self.world.entities_by_id[sender_id]
-                        if isinstance(ent, Dummy):
-                            ent.sync_state(e['x'], e['y'], 100, 100, 'CITIZEN', e['is_moving'], e['facing'])
-
-        # [Network] Send My Pos
-        if self.player and self.player.alive:
-            curr_pos = (int(self.player.pos_x), int(self.player.pos_y))
-            if curr_pos != self.last_sent_pos:
-                if hasattr(self.game, 'network') and self.game.network.connected:
-                    self.game.network.send_move(curr_pos[0], curr_pos[1], self.player.is_moving, self.player.facing_dir)
-                self.last_sent_pos = curr_pos
-
         self.time_system.update(dt)
         self.world.update(dt, self.current_phase, self.weather, self.day_count)
         self.lighting.update(dt)
@@ -192,7 +150,9 @@ class PlayState(BaseState):
 
                 self.player.update_bullets(self.npcs)
 
-        # [Original Logic Restored] Emotion System
+        # [Removed Redundant Weather Update] Weather is now handled in TimeSystem.update
+
+        # Emotion System
         if self.player.role in ["CITIZEN", "DOCTOR", "FARMER", "MINER", "FISHER"]:
             if self.current_phase == "NIGHT":
                 nearest_dist = float('inf')
@@ -220,7 +180,7 @@ class PlayState(BaseState):
                     self.world.effects.append(VisualSound(self.player.rect.centerx, self.player.rect.centery, "GROAN...", (200, 200, 200), 1.0))
             else: self.player.emotions['PAIN'] = 0
 
-        # [Original Logic Restored] Mafia Sighting
+        # Mafia Sighting Log
         if self.current_phase == "NIGHT" and random.random() < 0.005:
             for n in self.npcs:
                 if n.role == "MAFIA" and n.alive:
@@ -261,6 +221,9 @@ class PlayState(BaseState):
                 self.tile_alphas[tile] -= fade_speed
                 if self.tile_alphas[tile] <= 0:
                     del self.tile_alphas[tile]
+
+        if self.state_timer <= 0:
+            self._advance_phase()
 
     def _update_spectator_camera(self):
         keys = pygame.key.get_pressed()
@@ -328,6 +291,8 @@ class PlayState(BaseState):
             angle = math.atan2(shooter.facing_dir[1], shooter.facing_dir[0])
             
         is_enemy = (shooter.role != "PLAYER")
+        
+        # [Corrected] Use player.bullets for correct update cycle
         self.player.bullets.append(Bullet(start_x, start_y, angle, is_enemy=is_enemy))
         self.world.effects.append(VisualSound(start_x, start_y, "BANG!", (255, 200, 50), 2.0))
         if shooter.role == "POLICE":
@@ -583,13 +548,8 @@ class PlayState(BaseState):
             if (pygame.time.get_ticks() // 500) % 2 == 0:
                 cursor_x = 10 + txt_surf.get_width()
                 pygame.draw.line(screen, (255, 255, 255), (cursor_x, self.game.screen_height - 35), (cursor_x, self.game.screen_height - 5), 2)
-        
-        # Draw Console last (on top)
-        self.console.draw(screen)
 
     def handle_event(self, event):
-        if self.console.handle_event(event): return
-        
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
             self.is_chatting = not self.is_chatting
             if not self.is_chatting:

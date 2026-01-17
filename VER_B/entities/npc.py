@@ -14,14 +14,11 @@ from systems.behavior_tree import BTNode, Composite, Selector, Sequence, Action,
 FONT_POPUP = None
 
 class Dummy(Entity):
-    def __init__(self, x, y, map_data, map_width, map_height, name="Dummy", role="CITIZEN", tile_cache=None, zone_map=None, map_manager=None, is_master=True):
+    def __init__(self, x, y, map_data, map_width, map_height, name="Dummy", role="CITIZEN", tile_cache=None, zone_map=None, map_manager=None):
         super().__init__(x, y, map_data, map_width=map_width, map_height=map_height, zone_map=zone_map, name=name, role=role, map_manager=map_manager)
 
         self.tile_cache = tile_cache if tile_cache else {}
         self.logger = GameLogger.get_instance()
-        
-        # [Multiplayer Architecture]
-        self.is_master = is_master # True: AI runs locally (Host), False: AI runs remotely (Client)
 
         global FONT_POPUP
         if FONT_POPUP is None:
@@ -69,15 +66,7 @@ class Dummy(Entity):
         self.device_on = False
         self.device_battery = 100.0
 
-        # AI Tree is only needed if we are the master
-        if self.is_master:
-            self.tree = self._build_behavior_tree()
-        else:
-            self.tree = None
-
-        # [Slave Mode Interpolation]
-        self.target_pos = (x, y)
-        self.lerp_factor = 0.1
+        self.tree = self._build_behavior_tree()
 
     def add_popup(self, text, color=(255, 255, 255)):
         self.popups.append({'text': text, 'color': color, 'timer': pygame.time.get_ticks() + 1500})
@@ -89,10 +78,7 @@ class Dummy(Entity):
         if not self.alive: return
         self.morph_active = False
         gx, gy = int(self.rect.centerx // TILE_SIZE), int(self.rect.centery // TILE_SIZE)
-        is_indoors = False
-        if 0 <= gx < self.map_width and 0 <= gy < self.map_height:
-             is_indoors = (self.zone_map[gy][gx] in INDOOR_ZONES)
-             
+        is_indoors = self.zone_map[gy][gx] in INDOOR_ZONES if 0 <= gy < self.map_height and 0 <= gx < self.map_width else False
         if self.is_hiding and is_indoors:
             self.hp, self.ap = self.max_hp, self.max_ap
             self.add_popup("Rested", (100, 255, 255))
@@ -314,70 +300,24 @@ class Dummy(Entity):
         if not self.alive: return None
         self._validate_environment()
         now = pygame.time.get_ticks(); self.check_stat_changes()
-        
-        # [Sync Logic] Only Master updates logic
-        if self.is_master:
-            if self.role == "MAFIA" and is_mafia_frozen:
-                self.is_moving = False
-                return None
-            if self.is_unlocking:
-                if now >= self.unlock_finish_timer:
-                    self.is_unlocking = False
-                    if self.path:
-                        nx, ny = self.path[0]
-                        if self.map_manager: self.map_manager.unlock_door(nx, ny); self.add_popup("Unlocked!")
-                    return None
-                return BTState.RUNNING
-            if self.pending_path is not None:
-                if not self.is_hiding: self.path = self.pending_path
-                self.pending_path = None; self.is_pathfinding = False
-            
-            blackboard = {'phase': phase, 'player': player, 'npcs': npcs, 'targets': npcs + [player], 'noise_list': noise_list, 'bloody_footsteps': bloody_footsteps, 'day_count': day_count, 'is_mafia_frozen': is_mafia_frozen}
-            result = self.tree.tick(self, blackboard)
-            if isinstance(result, str): return result
-            return self.process_movement(phase, npcs, slow_down=is_mafia_frozen if self.role == "MAFIA" else False)
-        
-        else:
-            # [Slave Mode] Just interpolate position (No AI)
-            self._update_slave_movement()
-            return None
-
-    def _update_slave_movement(self):
-        # Simple lerp to target position
-        dx = self.target_pos[0] - self.pos_x
-        dy = self.target_pos[1] - self.pos_y
-        dist = math.sqrt(dx**2 + dy**2)
-        
-        if dist > 1.0:
-            move_x = dx * self.lerp_factor
-            move_y = dy * self.lerp_factor
-            self.pos_x += move_x
-            self.pos_y += move_y
-            self.rect.x = round(self.pos_x)
-            self.rect.y = round(self.pos_y)
-            
-            # Update facing
-            if abs(dx) > abs(dy):
-                self.facing_dir = (1, 0) if dx > 0 else (-1, 0)
-            else:
-                self.facing_dir = (0, 1) if dy > 0 else (0, -1)
-            self.is_moving = True
-        else:
+        if self.role == "MAFIA" and is_mafia_frozen:
             self.is_moving = False
-
-    def sync_state(self, x, y, hp, ap, role, is_moving, facing):
-        """Called by network manager to update slave state"""
-        self.target_pos = (x, y)
-        # If distance is too big, teleport
-        if math.hypot(x - self.pos_x, y - self.pos_y) > TILE_SIZE * 5:
-            self.pos_x, self.pos_y = x, y
-            self.rect.x, self.rect.y = int(x), int(y)
-            
-        self.hp = hp
-        self.ap = ap
-        # Role shouldn't change often but sync it anyway if needed
-        self.is_moving = is_moving
-        self.facing_dir = facing
+            return None
+        if self.is_unlocking:
+            if now >= self.unlock_finish_timer:
+                self.is_unlocking = False
+                if self.path:
+                    nx, ny = self.path[0]
+                    if self.map_manager: self.map_manager.unlock_door(nx, ny); self.add_popup("Unlocked!")
+                return None
+            return BTState.RUNNING
+        if self.pending_path is not None:
+            if not self.is_hiding: self.path = self.pending_path
+            self.pending_path = None; self.is_pathfinding = False
+        blackboard = {'phase': phase, 'player': player, 'npcs': npcs, 'targets': npcs + [player], 'noise_list': noise_list, 'bloody_footsteps': bloody_footsteps, 'day_count': day_count, 'is_mafia_frozen': is_mafia_frozen}
+        result = self.tree.tick(self, blackboard)
+        if isinstance(result, str): return result
+        return self.process_movement(phase, npcs, slow_down=is_mafia_frozen if self.role == "MAFIA" else False)
 
     def set_destination(self, tx, ty, reason="Unknown"):
         if self.is_hiding: self.is_hiding = False; self.hiding_type = 0
@@ -474,10 +414,6 @@ class Dummy(Entity):
         else:
             self.is_moving = True; mx, my = (dx/dist)*self.speed, (dy/dist)*self.speed
             self.move_single_axis(mx, 0, npcs); self.move_single_axis(0, my, npcs)
-            
-            # [Optimization] Update Spatial Grid
-            if hasattr(self, 'world') and self.world.spatial_grid:
-                self.world.spatial_grid.update_entity(self)
         return True
 
 

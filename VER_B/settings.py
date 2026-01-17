@@ -177,18 +177,3 @@ ZONES = {
 }
 
 INDOOR_ZONES = [6, 7, 8]
-
-# [Data-Driven Override]
-try:
-    from managers.data_manager import DataManager
-    dm = DataManager.get_instance()
-    if dm.items:
-        ITEMS = dm.items
-        print("[Settings] ITEMS loaded from DataManager")
-except Exception as e:
-    print(f"[Settings] Failed to load data: {e}")
-
-# [Network Settings]
-NETWORK_PORT = 5555
-SERVER_IP = "127.0.0.1" # Localhost default
-BUFFER_SIZE = 4096

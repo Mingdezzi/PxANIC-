@@ -1,0 +1,36 @@
+2026-01-16 01:15:11,979 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-16 01:15:11,994 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-16 01:15:20,592 - [INFO] - [PLAY] Entering PlayState...
+2026-01-16 01:15:20,613 - [INFO] - [PLAYER] Initialized at (1696, 1600) Role: CITIZEN
+2026-01-16 01:15:20,613 - [INFO] - [PLAYER] Role changed to DOCTOR (None)
+2026-01-16 01:15:20,618 - [INFO] - [GAME] Weather set to: CLEAR
+2026-01-16 01:15:21,618 - [DEBUG] - [PLAYER] Device toggled: True
+2026-01-16 01:15:22,558 - [DEBUG] - [PLAYER] Device toggled: False
+2026-01-16 01:15:25,919 - [DEBUG] - [PLAYER] Device toggled: True
+2026-01-16 01:15:26,630 - [DEBUG] - [PLAYER] Device toggled: False
+2026-01-16 01:15:27,964 - [DEBUG] - [PLAYER] Device toggled: True
+2026-01-16 01:15:28,529 - [DEBUG] - [PLAYER] Device toggled: False
+2026-01-16 01:15:29,146 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-16 01:15:29,243 - [DEBUG] - [INPUT] E Key Released (Hold: 99ms) Target: (61, 46)
+2026-01-16 01:15:29,248 - [INFO] - [PLAYER] Interact with 5321008 at (61, 46) Mode: short
+2026-01-16 01:15:30,438 - [INFO] - [PLAYER] Morning Process Complete
+2026-01-16 01:15:35,061 - [DEBUG] - [PLAYER] Device toggled: True
+2026-01-16 01:15:35,386 - [DEBUG] - [PLAYER] Device toggled: False
+2026-01-16 01:15:35,898 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-16 01:15:36,012 - [DEBUG] - [INPUT] E Key Released (Hold: 115ms) Target: (69, 45)
+2026-01-16 01:15:36,012 - [INFO] - [PLAYER] Interact with 9322008 at (69, 45) Mode: short
+2026-01-16 01:15:46,118 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-16 01:15:46,197 - [DEBUG] - [INPUT] E Key Released (Hold: 82ms) Target: (61, 46)
+2026-01-16 01:15:46,203 - [INFO] - [PLAYER] Interact with 5321008 at (61, 46) Mode: short
+2026-01-16 01:15:48,545 - [DEBUG] - [PLAYER] Device toggled: True
+2026-01-16 01:15:49,376 - [DEBUG] - [PLAYER] Device toggled: False
+2026-01-16 01:15:55,096 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-16 01:15:55,244 - [DEBUG] - [INPUT] E Key Released (Hold: 149ms) Target: (75, 61)
+2026-01-16 01:16:13,818 - [INFO] - [PLAYER] Doctor Healed Bot 4
+2026-01-16 01:16:14,725 - [INFO] - [PLAYER] Doctor Healed Bot 4
+2026-01-16 01:16:17,944 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-16 01:16:18,058 - [DEBUG] - [INPUT] E Key Released (Hold: 115ms) Target: (59, 46)
+2026-01-16 01:16:18,058 - [INFO] - [PLAYER] Interact with 5321008 at (59, 46) Mode: short
+2026-01-16 01:16:46,068 - [DEBUG] - [PLAYER] Device toggled: True
+2026-01-16 01:16:49,202 - [DEBUG] - [PLAYER] Device toggled: False
+2026-01-16 01:16:50,951 - [INFO] - [SYSTEM] Engine Shutting Down

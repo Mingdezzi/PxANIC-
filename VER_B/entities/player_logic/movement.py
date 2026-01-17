@@ -12,6 +12,7 @@ class MovementLogic:
         
         multiplier = 1.0
         
+        # 1. 긍정적 효과
         if 'HAPPINESS' in self.p.emotions: multiplier += 0.10
         if 'DOPAMINE' in self.p.emotions:
             level = self.p.emotions['DOPAMINE']
@@ -22,6 +23,7 @@ class MovementLogic:
             bonus = [0, 0.05, 0.10, 0.15, 0.20, 0.30]
             multiplier += bonus[level]
 
+        # 2. 부정적 효과
         if 'FEAR' in self.p.emotions: multiplier -= 0.30
         
         if 'FATIGUE' in self.p.emotions:
@@ -64,10 +66,6 @@ class MovementLogic:
             is_moving = True
             if dx != 0: self.p.facing_dir = (dx, 0)
             elif dy != 0: self.p.facing_dir = (0, dy)
-            
-            # [Optimization] Update Spatial Grid Position
-            if hasattr(self.p, 'world') and self.p.world.spatial_grid:
-                self.p.world.spatial_grid.update_entity(self.p)
 
         self.p.is_moving = is_moving
         return is_moving

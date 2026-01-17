@@ -43,31 +43,11 @@ class MenuState(BaseState):
 
         self.buttons['Start'] = btn_rect
 
-        # Multiplayer Button
-        multi_rect = pygame.Rect(w // 2 - 150, h // 2 + 80, 300, 60)
-        is_hover_m = multi_rect.collidepoint(mx, my)
-        col_m = COLORS['BUTTON_HOVER'] if is_hover_m else COLORS['BUTTON']
-        
-        pygame.draw.rect(screen, col_m, multi_rect)
-        pygame.draw.rect(screen, (255, 255, 255), multi_rect, 2)
-        
-        txt_surf_m = self.large_font.render("MULTIPLAYER", True, (100, 255, 255))
-        txt_rect_m = txt_surf_m.get_rect(center=multi_rect.center)
-        screen.blit(txt_surf_m, txt_rect_m)
-        
-        self.buttons['Multi'] = multi_rect
-
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 mx, my = event.pos
                 if 'Start' in self.buttons and self.buttons['Start'].collidepoint(mx, my):
-                    from states.lobby_state import LobbyState
-                    self.game.state_machine.change(LobbyState(self.game))
-                
-                if 'Multi' in self.buttons and self.buttons['Multi'].collidepoint(mx, my):
-                    print("[MENU] Multiplayer clicked (Connecting...)")
-                    # Here we would initialize NetworkManager
-                    from states.lobby_state import LobbyState
-                    self.game.state_machine.change(LobbyState(self.game))
 
+                    from states.lobby_state import LobbyState
+                    self.game.state_machine.change(LobbyState(self.game))

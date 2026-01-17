@@ -1,0 +1,30 @@
+2026-01-17 19:48:42,947 - [INFO] - [DATA] Loaded 17 items.
+2026-01-17 19:48:42,947 - [INFO] - [DATA] Loaded 110 tiles.
+2026-01-17 19:48:42,947 - [INFO] - [DATA] Loaded 5 roles.
+2026-01-17 19:48:43,272 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 19:48:43,309 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 19:48:47,717 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 19:48:47,750 - [INFO] - [PLAYER] Initialized at (1632, 1568) Role: CITIZEN
+2026-01-17 19:48:47,750 - [INFO] - [PLAYER] Role changed to CITIZEN (FISHER)
+2026-01-17 19:49:07,557 - [INFO] - [PLAYER] Morning Process Complete
+2026-01-17 19:49:08,046 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:08,164 - [DEBUG] - [INPUT] E Key Released (Hold: 121ms) Target: (53, 40)
+2026-01-17 19:49:08,164 - [INFO] - [PLAYER] Interact with 5321008 at (53, 40) Mode: short
+2026-01-17 19:49:21,293 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:21,396 - [DEBUG] - [INPUT] E Key Released (Hold: 101ms) Target: (69, 44)
+2026-01-17 19:49:21,397 - [INFO] - [PLAYER] Interact with 9322008 at (69, 44) Mode: short
+2026-01-17 19:49:22,773 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:23,852 - [DEBUG] - [INPUT] E Key Released (Hold: 1080ms) Target: (69, 44)
+2026-01-17 19:49:23,852 - [INFO] - [PLAYER] Interact with 9322008 at (69, 44) Mode: long
+2026-01-17 19:49:31,092 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:31,221 - [DEBUG] - [INPUT] E Key Released (Hold: 132ms) Target: (53, 40)
+2026-01-17 19:49:31,221 - [INFO] - [PLAYER] Interact with 5321008 at (53, 40) Mode: short
+2026-01-17 19:49:41,941 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:42,060 - [DEBUG] - [INPUT] E Key Released (Hold: 120ms) Target: (57, 31)
+2026-01-17 19:49:42,060 - [INFO] - [PLAYER] Interact with 5321008 at (57, 31) Mode: short
+2026-01-17 19:49:48,878 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:49,006 - [DEBUG] - [INPUT] E Key Released (Hold: 129ms) Target: (71, 20)
+2026-01-17 19:49:49,638 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 19:49:49,714 - [DEBUG] - [INPUT] E Key Released (Hold: 77ms) Target: (72, 20)
+2026-01-17 19:49:49,714 - [INFO] - [PLAYER] Interact with 5321009 at (72, 20) Mode: short
+2026-01-17 19:49:55,972 - [INFO] - [SYSTEM] Engine Shutting Down

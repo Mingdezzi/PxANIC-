@@ -1,0 +1,8 @@
+2026-01-16 00:27:46,931 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-16 00:27:46,947 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-16 00:27:53,078 - [INFO] - [PLAY] Entering PlayState...
+2026-01-16 00:27:53,098 - [INFO] - [PLAYER] Initialized at (1696, 1568) Role: CITIZEN
+2026-01-16 00:27:53,098 - [INFO] - [PLAYER] Role changed to CITIZEN (MINER)
+2026-01-16 00:27:53,103 - [INFO] - [GAME] Weather set to: CLEAR
+2026-01-16 00:28:02,919 - [INFO] - [PLAYER] Morning Process Complete
+2026-01-16 00:28:08,918 - [INFO] - [SYSTEM] Engine Shutting Down

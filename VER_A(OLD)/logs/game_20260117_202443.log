@@ -1,0 +1,8 @@
+2026-01-17 20:24:43,767 - [INFO] - [DATA] Loaded 17 items.
+2026-01-17 20:24:43,767 - [INFO] - [DATA] Loaded 110 tiles.
+2026-01-17 20:24:43,782 - [INFO] - [DATA] Loaded 5 roles.
+2026-01-17 20:24:43,973 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 20:24:44,024 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 20:24:53,287 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 20:24:53,327 - [INFO] - [PLAYER] Initialized at (1600, 1568) Role: CITIZEN
+2026-01-17 20:24:53,327 - [INFO] - [PLAYER] Role changed to SPECTATOR (None)

@@ -897,14 +897,3 @@ NEW_ID_MAP = {
 
 BED_TILES = [8321211, 9322009]
 HIDEABLE_TILES = [6310104, 8310208, 8320209, 8320210, 8321211, 8320212]
-
-# [Data-Driven Override]
-try:
-    from managers.data_manager import DataManager
-    dm = DataManager.get_instance()
-    if dm.tiles:
-        # Update existing TILE_DATA instead of replacing to keep P constant safe if used elsewhere
-        TILE_DATA.update(dm.tiles)
-        print("[Tiles] TILE_DATA updated from DataManager")
-except Exception as e:
-    print(f"[Tiles] Failed to load data: {e}")

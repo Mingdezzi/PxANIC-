@@ -38,7 +38,7 @@ class StatusLogic:
         if is_blackout:
             self.p.emotions['FEAR'] = 1
 
-        # 5. 거리 기반 감정 (Spatial Optimization)
+        # 5. 거리 기반 감정
         target_role = None
         my_emotion = None
         
@@ -54,14 +54,7 @@ class StatusLogic:
 
         if my_emotion and target_role:
             min_dist_tile = 999
-            
-            # [Optimization] Use Spatial Grid instead of iterating all NPCs
-            search_targets = npcs
-            if hasattr(self.p, 'world'):
-                # Search within 30 tiles radius (max emotion range)
-                search_targets = self.p.world.get_nearby_entities(self.p, radius_tiles=30)
-            
-            for n in search_targets:
+            for n in npcs:
                 if n.role in target_role and n.alive:
                     d_px = math.hypot(self.p.rect.centerx - n.rect.centerx, self.p.rect.centery - n.rect.centery)
                     d_tile = d_px / TILE_SIZE
@@ -117,6 +110,7 @@ class StatusLogic:
         return sound_events
 
     def update_special_states(self, now):
+        # 떨림 효과
         if 'FEAR' in self.p.emotions or self.p.emotions.get('PAIN', 0) >= 3:
             if now > self.p.shiver_timer: 
                 self.p.shiver_timer = now + 50
@@ -124,6 +118,7 @@ class StatusLogic:
                 self.p.vibration_offset = (random.randint(-intensity, intensity), random.randint(-intensity, intensity))
         else: self.p.vibration_offset = (0, 0)
         
+        # 기면증
         if self.p.emotions.get('FATIGUE', 0) >= 5:
             if not hasattr(self.p, 'narcolepsy_timer'): self.p.narcolepsy_timer = now
             if (now - self.p.narcolepsy_timer) % 5000 > 4000:
@@ -131,6 +126,7 @@ class StatusLogic:
             else: self.p.is_eyes_closed = False
         else: self.p.is_eyes_closed = False
 
+        # 은신 상태 확인
         if 'FEAR' in self.p.emotions:
             if self.p.is_hiding:
                 self.p.is_hiding = False; self.p.hiding_type = 0; self.p.add_popup("PANIC! Cannot Hide!", (255, 50, 50))

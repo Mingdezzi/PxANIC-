@@ -1,0 +1,8 @@
+2026-01-17 19:54:18,751 - [INFO] - [DATA] Loaded 17 items.
+2026-01-17 19:54:18,752 - [INFO] - [DATA] Loaded 110 tiles.
+2026-01-17 19:54:18,753 - [INFO] - [DATA] Loaded 5 roles.
+2026-01-17 19:54:18,948 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 19:54:18,992 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 19:54:23,174 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 19:54:23,211 - [INFO] - [PLAYER] Initialized at (1632, 1696) Role: CITIZEN
+2026-01-17 19:54:23,211 - [INFO] - [PLAYER] Role changed to CITIZEN (FARMER)

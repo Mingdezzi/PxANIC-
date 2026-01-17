@@ -1,9 +1,9 @@
 import pygame
+import random
 from core.base_state import BaseState
 from managers.resource_manager import ResourceManager
-from systems.network import NetworkManager
 from colors import COLORS
-from settings import MAX_PLAYERS, MAX_SPECTATORS, MAX_TOTAL_USERS, NETWORK_PORT, DEFAULT_PHASE_DURATIONS
+from settings import SCREEN_WIDTH, SCREEN_HEIGHT, MAX_PLAYERS, MAX_SPECTATORS, MAX_TOTAL_USERS, DEFAULT_PHASE_DURATIONS
 
 class LobbyState(BaseState):
     def __init__(self, game):
@@ -12,185 +12,173 @@ class LobbyState(BaseState):
         self.font = self.resource_manager.get_font('default')
         self.bold_font = self.resource_manager.get_font('bold')
         self.large_font = self.resource_manager.get_font('large')
-        self.lobby_buttons = {}
-        
-        # Network Instance (Create if not exists)
-        if not hasattr(self.game, 'network'):
-            self.game.network = NetworkManager()
 
-        self.participants = [] # Synced from Server
-        self.my_id = -1
-        self.time_scale = 100 # Percentage
+        self.lobby_buttons = {}
+
+        if 'participants' not in self.game.shared_data:
+            self.game.shared_data['participants'] = [{'name': 'Player 1', 'type': 'PLAYER', 'role': 'RANDOM', 'group': 'PLAYER'}]
+        self.participants = self.game.shared_data['participants']
+
+        self.time_scale = 100  # Percentage (100 means 100% of DEFAULT_PHASE_DURATIONS)
 
     def enter(self, params=None):
-        print("[LOBBY] Connecting to server...")
-        if not self.game.network.connected:
-            if self.game.network.connect():
-                print("[LOBBY] Success!")
-            else:
-                print("[LOBBY] Failed. Playing Offline.")
-                # Fallback to local (Add local player)
-                self.participants = [{'id': 0, 'name': 'Player 1', 'role': 'CITIZEN', 'group': 'PLAYER', 'type': 'PLAYER'}]
-                self.game.shared_data['participants'] = self.participants
-                return
+        pass
 
     def update(self, dt):
-        if not self.game.network.connected: return
-
-        events = self.game.network.get_events()
-        for e in events:
-            ptype = e.get('type')
-            
-            if ptype == 'WELCOME':
-                self.my_id = e.get('my_id')
-                self.game.network.my_id = self.my_id
-                print(f"[LOBBY] My ID is {self.my_id}")
-
-            elif ptype == 'PLAYER_LIST':
-                self.participants = e.get('participants', [])
-                self.game.shared_data['participants'] = self.participants
-
-            elif ptype == 'GAME_START':
-                print("[LOBBY] Game Starting!")
-                # Apply Time Scale (Server should actually handle this, but for now we trust host config)
-                scale = self.time_scale / 100.0
-                custom = {}
-                for k, v in DEFAULT_PHASE_DURATIONS.items():
-                    custom[k] = int(v * scale)
-                self.game.shared_data['custom_durations'] = custom
-                
-                from states.play_state import PlayState
-                self.game.state_machine.change(PlayState(self.game))
+        pass
 
     def draw(self, screen):
+        self.lobby_buttons = {}
         screen.fill(COLORS['MENU_BG'])
         w, h = screen.get_width(), screen.get_height()
         mx, my = pygame.mouse.get_pos()
-        self.lobby_buttons = {}
 
-        # Title
-        title = self.large_font.render(f"LOBBY - Connected: {len(self.participants)}", True, (100, 255, 100))
-        screen.blit(title, (50, 40))
+        player_group = [p for p in self.participants if p['group'] == 'PLAYER']
+        spectator_group = [p for p in self.participants if p['group'] == 'SPECTATOR']
 
-        # --- [Player List] ---
-        start_y = 100
-        # Filter participants by group if we had groups, but current server impl sends flat list. 
-        # For full restore, we need server to support groups/types. 
-        # Assuming server logic is basic, we just list them.
-        
-        # But wait, we need to restore the UI layout (Left: Players, Right: Spectators)
-        # We will split local list for display
-        player_group = [p for p in self.participants if p.get('group', 'PLAYER') == 'PLAYER']
-        spectator_group = [p for p in self.participants if p.get('group') == 'SPECTATOR']
-
-        # Left Area (Players)
         left_area_x = 50
+        left_area_w = 600
+        start_y = 100
+
+        title = self.large_font.render(f"PLAYERS ({len(player_group)}/{MAX_PLAYERS})", True, (100, 255, 100))
+        screen.blit(title, (left_area_x, 40))
+
         for i, p in enumerate(player_group):
-            rect = pygame.Rect(left_area_x, start_y + i*60, 500, 50)
-            is_me = (p.get('id') == self.my_id)
-            color = (50, 50, 70) if is_me else COLORS['SLOT_BG']
-            pygame.draw.rect(screen, color, rect)
-            pygame.draw.rect(screen, (100, 100, 120), rect, 1)
+            pidx = self.participants.index(p)
+            rect_obj = pygame.Rect(left_area_x, start_y + i*55, left_area_w, 45)
+            pygame.draw.rect(screen, COLORS['SLOT_BG'], rect_obj)
+            pygame.draw.rect(screen, (100, 100, 120), rect_obj, 1)
 
-            p_str = f"{p['name']} (ID: {p.get('id', '?')})"
-            txt = self.font.render(p_str, True, (255, 255, 255))
-            screen.blit(txt, (rect.x + 20, rect.y + 15))
+            p_txt = self.font.render(f"{p['name']} [{p['type']}]", True, (255, 255, 255))
+            screen.blit(p_txt, (rect_obj.x + 15, rect_obj.y + 10))
 
-            if is_me:
-                role_rect = pygame.Rect(rect.right - 120, rect.y + 10, 100, 30)
-                pygame.draw.rect(screen, COLORS['ROLE_BTN'], role_rect)
-                role_txt = self.font.render(p.get('role', 'CITIZEN'), True, (255, 255, 0))
-                screen.blit(role_txt, (role_rect.x + 10, role_rect.y + 5))
-                self.lobby_buttons['MY_ROLE'] = role_rect
-            else:
-                role_txt = self.font.render(p.get('role', 'CITIZEN'), True, (200, 200, 200))
-                screen.blit(role_txt, (rect.right - 110, rect.y + 15))
+            role_rect = pygame.Rect(rect_obj.right - 180, rect_obj.y + 7, 100, 30)
+            r_col = COLORS['BUTTON_HOVER'] if role_rect.collidepoint(mx, my) else COLORS['ROLE_BTN']
+            pygame.draw.rect(screen, r_col, role_rect)
+            role_txt = self.font.render(p['role'], True, (255, 255, 0))
+            screen.blit(role_txt, role_txt.get_rect(center=role_rect.center))
+            self.lobby_buttons[f"ROLE_{pidx}"] = (role_rect, pidx)
 
-        # Add Bot Button (Host Only)
-        if self.my_id == 0: # Host
-            add_rect = pygame.Rect(left_area_x, start_y + len(player_group)*60, 180, 40)
-            pygame.draw.rect(screen, COLORS['BUTTON'], add_rect)
-            screen.blit(self.font.render("+ ADD BOT", True, (255, 255, 255)), (add_rect.x+20, add_rect.y+10))
+            if len(spectator_group) < MAX_SPECTATORS:
+                move_rect = pygame.Rect(rect_obj.right - 50, rect_obj.y + 7, 40, 30)
+                m_col = (100, 100, 100) if move_rect.collidepoint(mx, my) else (60, 60, 60)
+                pygame.draw.rect(screen, m_col, move_rect)
+                m_txt = self.bold_font.render("->", True, (200, 200, 200))
+                screen.blit(m_txt, m_txt.get_rect(center=move_rect.center))
+                self.lobby_buttons[f"TO_SPEC_{pidx}"] = move_rect
+
+        if len(player_group) < MAX_PLAYERS:
+            add_rect = pygame.Rect(left_area_x, start_y + len(player_group)*55, 180, 40)
+            a_col = COLORS['BUTTON_HOVER'] if add_rect.collidepoint(mx, my) else COLORS['BUTTON']
+            pygame.draw.rect(screen, a_col, add_rect)
+            screen.blit(self.font.render("+ ADD PLAYER BOT", True, (255, 255, 255)), (add_rect.x+20, add_rect.y+8))
             self.lobby_buttons['ADD_BOT_PLAYER'] = add_rect
 
-        # Time Scale UI (Bottom Right)
+        right_area_x = left_area_x + left_area_w + 50
+        right_area_w = 400
+
+        title_spec = self.large_font.render(f"SPECTATORS ({len(spectator_group)}/{MAX_SPECTATORS})", True, (150, 150, 255))
+        screen.blit(title_spec, (right_area_x, 40))
+
+        for i, p in enumerate(spectator_group):
+            pidx = self.participants.index(p)
+            rect_obj = pygame.Rect(right_area_x, start_y + i*55, right_area_w, 45)
+            pygame.draw.rect(screen, (30, 30, 40), rect_obj)
+            pygame.draw.rect(screen, (100, 100, 120), rect_obj, 1)
+
+            if len(player_group) < MAX_PLAYERS:
+                move_rect = pygame.Rect(rect_obj.x + 10, rect_obj.y + 7, 40, 30)
+                m_col = (100, 100, 100) if move_rect.collidepoint(mx, my) else (60, 60, 60)
+                pygame.draw.rect(screen, m_col, move_rect)
+                m_txt = self.bold_font.render("<-", True, (200, 200, 200))
+                screen.blit(m_txt, m_txt.get_rect(center=move_rect.center))
+                self.lobby_buttons[f"TO_PLAYER_{pidx}"] = move_rect
+
+            p_txt = self.font.render(f"{p['name']} [{p['type']}]", True, (200, 200, 200))
+            screen.blit(p_txt, (rect_obj.x + 60, rect_obj.y + 10))
+
+        if len(spectator_group) < MAX_SPECTATORS:
+            add_rect = pygame.Rect(right_area_x, start_y + len(spectator_group)*55, 180, 40)
+            a_col = COLORS['BUTTON_HOVER'] if add_rect.collidepoint(mx, my) else COLORS['BUTTON']
+            pygame.draw.rect(screen, a_col, add_rect)
+            screen.blit(self.font.render("+ ADD SPEC BOT", True, (255, 255, 255)), (add_rect.x+20, add_rect.y+8))
+            self.lobby_buttons['ADD_BOT_SPEC'] = add_rect
+
+        # Time Scale UI
         sx, sy = w - 450, h - 250
         pygame.draw.rect(screen, (30, 30, 40), (sx - 20, sy - 40, 420, 120))
         pygame.draw.rect(screen, (100, 100, 120), (sx - 20, sy - 40, 420, 120), 2)
         screen.blit(self.bold_font.render("TIME SETTINGS", True, (200, 200, 200)), (sx, sy - 30))
+
         screen.blit(self.font.render("TIME SCALE:", True, (255, 255, 255)), (sx, sy + 30))
         
+        # Minus Button
         m_rect = pygame.Rect(sx + 150, sy + 25, 30, 30)
         pygame.draw.rect(screen, COLORS['BUTTON'], m_rect)
         screen.blit(self.bold_font.render("-", True, (255,255,255)), (m_rect.x+10, m_rect.y+5))
         self.lobby_buttons["SCALE_MINUS"] = m_rect
 
+        # Scale Value
         val_txt = self.large_font.render(f"{self.time_scale}%", True, (0, 255, 0))
         screen.blit(val_txt, (sx + 200, sy + 20))
 
+        # Plus Button
         p_rect = pygame.Rect(sx + 300, sy + 25, 30, 30)
         pygame.draw.rect(screen, COLORS['BUTTON'], p_rect)
         screen.blit(self.bold_font.render("+", True, (255,255,255)), (p_rect.x+8, p_rect.y+5))
         self.lobby_buttons["SCALE_PLUS"] = p_rect
 
-        # Start Button
-        if self.my_id == 0 or not self.game.network.connected:
-            start_rect = pygame.Rect(w - 250, h - 100, 200, 60)
-            pygame.draw.rect(screen, (0, 150, 0), start_rect)
-            st_txt = self.large_font.render("START GAME", True, (255, 255, 255))
-            screen.blit(st_txt, (start_rect.x + 20, start_rect.y + 10))
-            self.lobby_buttons['START'] = start_rect
-        else:
-            msg = self.font.render("Waiting for Host...", True, (150, 150, 150))
-            screen.blit(msg, (w - 250, h - 80))
+        start_rect = pygame.Rect(w - 250, h - 100, 200, 60)
+        s_col = (0, 150, 0) if start_rect.collidepoint(mx, my) else (0, 100, 0)
+        pygame.draw.rect(screen, s_col, start_rect)
+        pygame.draw.rect(screen, (255, 255, 255), start_rect, 2)
+        screen.blit(self.large_font.render("START", True, (255, 255, 255)), (start_rect.x+55, start_rect.y+15))
+        self.lobby_buttons['START'] = start_rect
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 mx, my = event.pos
-                
-                if 'START' in self.lobby_buttons and self.lobby_buttons['START'].collidepoint(mx, my):
-                    # Save Time Scale locally first
+                btns = self.lobby_buttons
+
+                if 'START' in btns and btns['START'].collidepoint(mx, my):
+                    # Calculate durations based on Time Scale
                     scale = self.time_scale / 100.0
                     custom = {}
                     for k, v in DEFAULT_PHASE_DURATIONS.items():
                         custom[k] = int(v * scale)
+                    
                     self.game.shared_data['custom_durations'] = custom
 
-                    if self.game.network.connected:
-                        self.game.network.send_start_game()
-                    else:
-                        from states.play_state import PlayState
-                        self.game.state_machine.change(PlayState(self.game))
+                    from states.play_state import PlayState
+                    self.game.state_machine.change(PlayState(self.game))
 
-                if 'MY_ROLE' in self.lobby_buttons and self.lobby_buttons['MY_ROLE'].collidepoint(mx, my):
-                    roles = ["CITIZEN", "MAFIA", "POLICE", "DOCTOR"]
-                    curr_role = "CITIZEN"
-                    for p in self.participants:
-                        if p.get('id') == self.my_id:
-                            curr_role = p.get('role', 'CITIZEN')
-                            break
-                    try:
-                        next_idx = (roles.index(curr_role) + 1) % len(roles)
-                        new_role = roles[next_idx]
-                        if self.game.network.connected:
-                            self.game.network.send_role_change(new_role)
-                        else:
-                            # Offline
-                            self.participants[0]['role'] = new_role
-                    except: pass
+                if 'ADD_BOT_PLAYER' in btns and btns['ADD_BOT_PLAYER'].collidepoint(mx, my):
+                    if len(self.participants) < MAX_TOTAL_USERS:
+                        self.participants.append({'name': f'Bot {len(self.participants)}', 'type': 'BOT', 'role': 'RANDOM', 'group': 'PLAYER'})
 
-                if 'SCALE_MINUS' in self.lobby_buttons and self.lobby_buttons['SCALE_MINUS'].collidepoint(mx, my):
-                    self.time_scale = max(10, self.time_scale - 10)
+                if 'ADD_BOT_SPEC' in btns and btns['ADD_BOT_SPEC'].collidepoint(mx, my):
+                    if len(self.participants) < MAX_TOTAL_USERS:
+                        self.participants.append({'name': f'SpecBot {len(self.participants)}', 'type': 'BOT', 'role': 'RANDOM', 'group': 'SPECTATOR'})
                 
-                if 'SCALE_PLUS' in self.lobby_buttons and self.lobby_buttons['SCALE_PLUS'].collidepoint(mx, my):
-                    self.time_scale = min(500, self.time_scale + 10)
+                if 'SCALE_MINUS' in btns and btns['SCALE_MINUS'].collidepoint(mx, my):
+                    self.time_scale = max(50, self.time_scale - 10)
+                
+                if 'SCALE_PLUS' in btns and btns['SCALE_PLUS'].collidepoint(mx, my):
+                    self.time_scale = min(200, self.time_scale + 10)
 
-                # Add Bot (Offline/Online handling)
-                if 'ADD_BOT_PLAYER' in self.lobby_buttons and self.lobby_buttons['ADD_BOT_PLAYER'].collidepoint(mx, my):
-                    if not self.game.network.connected:
-                        if len(self.participants) < MAX_TOTAL_USERS:
-                            self.participants.append({'id': len(self.participants), 'name': f'Bot {len(self.participants)}', 'role': 'RANDOM', 'group': 'PLAYER', 'type': 'BOT'})
-                    else:
-                        # Request Server to add a bot
-                        self.game.network.send_add_bot()
+                for k, v in btns.items():
+                    if k.startswith("ROLE_") and v[0].collidepoint(mx, my):
+                        roles = ["RANDOM", "FARMER", "MINER", "FISHER", "POLICE", "DOCTOR", "MAFIA"]
+                        p = self.participants[v[1]]
+                        if p['group'] == 'PLAYER':
+                            curr_idx = roles.index(p['role']) if p['role'] in roles else 0
+                            p['role'] = roles[(curr_idx+1)%len(roles)]
+
+                    elif k.startswith("TO_SPEC_") and v.collidepoint(mx, my):
+                        idx = int(k.replace("TO_SPEC_", ""))
+                        self.participants[idx]['group'] = 'SPECTATOR'
+
+                    elif k.startswith("TO_PLAYER_") and v.collidepoint(mx, my):
+                        idx = int(k.replace("TO_PLAYER_", ""))
+                        self.participants[idx]['group'] = 'PLAYER'

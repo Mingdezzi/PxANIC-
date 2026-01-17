@@ -1,0 +1,7 @@
+2026-01-17 18:02:26,115 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 18:02:26,167 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 18:02:33,586 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 18:02:33,646 - [INFO] - [PLAYER] Initialized at (1632, 1632) Role: CITIZEN
+2026-01-17 18:02:33,647 - [INFO] - [PLAYER] Role changed to CITIZEN (FARMER)
+2026-01-17 18:02:53,118 - [INFO] - [PLAYER] Morning Process Complete
+2026-01-17 18:03:02,161 - [INFO] - [SYSTEM] Engine Shutting Down

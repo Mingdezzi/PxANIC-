@@ -1,28 +1,16 @@
 import random
-import uuid
 from world.map_manager import MapManager
 from entities.player import Player
 from entities.npc import Dummy
 from settings import TILE_SIZE, ZONES
-from core.spatial_grid import SpatialGrid
 
 class GameWorld:
     def __init__(self, game):
         self.game = game
         self.map_manager = MapManager()
-        
-        # [Spatial Partitioning]
-        # Map dimensions are loaded later, so init with defaults, resize later if needed
-        self.spatial_grid = None
-        
-        # [Entity Management]
         self.player = None
         self.npcs = []
         self.bullets = []
-        
-        # {uid: entity_obj} for fast lookup
-        self.entities_by_id = {} 
-        
         self.effects = []
         self.indicators = []
         self.noise_list = []
@@ -37,24 +25,10 @@ class GameWorld:
 
     def load_map(self, filename="map.json"):
         self.map_manager.load_map(filename)
-        # Initialize Spatial Grid with correct map size
-        self.spatial_grid = SpatialGrid(self.map_manager.width, self.map_manager.height, cell_size=10)
 
     def find_safe_spawn(self):
         c = self.map_manager.get_spawn_points(zone_id=1)
         return random.choice(c) if c else (100, 100)
-
-    def register_entity(self, entity):
-        # Assign UUID if not present (simple integer ID for now for performance, or uuid4)
-        if not hasattr(entity, 'uid') or entity.uid is None:
-            entity.uid = str(uuid.uuid4())[:8] # Short unique ID
-        
-        self.entities_by_id[entity.uid] = entity
-        if self.spatial_grid:
-            self.spatial_grid.add(entity)
-            
-        # Inject world reference into entity for convenience
-        entity.world = self
 
     def init_entities(self):
         participants = self.game.shared_data.get('participants', [])
@@ -78,8 +52,6 @@ class GameWorld:
         sx, sy = self.find_safe_spawn()
         self.player = Player(sx, sy, self.map_manager.width, self.map_manager.height, None, self.map_manager.zone_map, map_manager=self.map_manager)
         self.player.is_player = True
-        
-        self.register_entity(self.player) # Register Player
 
         my_data = next((p for p in participants if p['type'] == 'PLAYER'), None)
         if my_data:
@@ -101,12 +73,11 @@ class GameWorld:
                     n = Dummy(nx, ny, None, self.map_manager.width, self.map_manager.height, name=p['name'], role=rt, zone_map=self.map_manager.zone_map, map_manager=self.map_manager)
                     if p['role'] in cit_jobs: n.sub_role = p['role']
                     n.vote_count = 0 
-                    self.register_entity(n) # Register NPC
                     self.npcs.append(n)
 
     def update(self, dt, current_phase, weather, day_count):
         # Update Event Timers
-        now = pygame.time.get_ticks()
+        now = self.game.get_ticks() if hasattr(self.game, 'get_ticks') else pygame.time.get_ticks()
         
         if self.is_blackout and now > self.blackout_timer: self.is_blackout = False
         if self.is_mafia_frozen and now > self.frozen_timer: self.is_mafia_frozen = False
@@ -124,17 +95,4 @@ class GameWorld:
             i.update()
             if not i.alive: self.indicators.remove(i)
 
-    def get_nearby_entities(self, entity, radius_tiles=None):
-        """Proxy to spatial grid"""
-        if not self.spatial_grid: return []
-        
-        uids = self.spatial_grid.get_nearby_entities(entity, radius_tiles)
-        entities = []
-        for uid in uids:
-            if uid in self.entities_by_id:
-                ent = self.entities_by_id[uid]
-                if ent.alive: # Only return alive entities
-                    entities.append(ent)
-        return entities
-
-import pygame
+import pygame # Needed for ticks

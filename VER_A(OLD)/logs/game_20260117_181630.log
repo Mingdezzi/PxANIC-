@@ -1,0 +1,47 @@
+2026-01-17 18:16:30,550 - [INFO] - [DATA] Loaded 17 items.
+2026-01-17 18:16:30,550 - [INFO] - [DATA] Loaded 110 tiles.
+2026-01-17 18:16:30,550 - [INFO] - [DATA] Loaded 5 roles.
+2026-01-17 18:16:30,834 - [INFO] - [SYSTEM] Game Engine Initializing...
+2026-01-17 18:16:30,881 - [INFO] - [SYSTEM] Engine Loop Started
+2026-01-17 18:16:38,498 - [INFO] - [PLAY] Entering PlayState...
+2026-01-17 18:16:38,535 - [INFO] - [PLAYER] Initialized at (1632, 1632) Role: CITIZEN
+2026-01-17 18:16:38,535 - [INFO] - [PLAYER] Role changed to CITIZEN (FARMER)
+2026-01-17 18:16:58,023 - [INFO] - [PLAYER] Morning Process Complete
+2026-01-17 18:17:22,574 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:23,675 - [DEBUG] - [INPUT] E Key Released (Hold: 1103ms) Target: (19, 9)
+2026-01-17 18:17:23,678 - [INFO] - [PLAYER] Interact with 9312000 at (19, 9) Mode: long
+2026-01-17 18:17:24,139 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:24,579 - [DEBUG] - [INPUT] E Key Released (Hold: 435ms) Target: (19, 9)
+2026-01-17 18:17:24,580 - [INFO] - [PLAYER] Interact with 9312000 at (19, 9) Mode: short
+2026-01-17 18:17:28,183 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:28,319 - [DEBUG] - [INPUT] E Key Released (Hold: 136ms) Target: (19, 6)
+2026-01-17 18:17:29,007 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:29,121 - [DEBUG] - [INPUT] E Key Released (Hold: 114ms) Target: (19, 6)
+2026-01-17 18:17:29,254 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:29,363 - [DEBUG] - [INPUT] E Key Released (Hold: 108ms) Target: (19, 6)
+2026-01-17 18:17:29,824 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:29,885 - [DEBUG] - [INPUT] E Key Released (Hold: 62ms) Target: (19, 6)
+2026-01-17 18:17:31,062 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:31,111 - [DEBUG] - [INPUT] E Key Released (Hold: 48ms) Target: (18, 6)
+2026-01-17 18:17:31,438 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:31,531 - [DEBUG] - [INPUT] E Key Released (Hold: 98ms) Target: (18, 6)
+2026-01-17 18:17:32,334 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:32,419 - [DEBUG] - [INPUT] E Key Released (Hold: 84ms) Target: (18, 6)
+2026-01-17 18:17:32,759 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:32,862 - [DEBUG] - [INPUT] E Key Released (Hold: 98ms) Target: (18, 6)
+2026-01-17 18:17:32,995 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:33,160 - [DEBUG] - [INPUT] E Key Released (Hold: 166ms) Target: (18, 6)
+2026-01-17 18:17:33,940 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:34,037 - [DEBUG] - [INPUT] E Key Released (Hold: 98ms) Target: (18, 1)
+2026-01-17 18:17:34,281 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:34,384 - [DEBUG] - [INPUT] E Key Released (Hold: 98ms) Target: (18, 1)
+2026-01-17 18:17:34,514 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:34,604 - [DEBUG] - [INPUT] E Key Released (Hold: 89ms) Target: (18, 1)
+2026-01-17 18:17:34,702 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:34,806 - [DEBUG] - [INPUT] E Key Released (Hold: 103ms) Target: (18, 1)
+2026-01-17 18:17:34,872 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:34,981 - [DEBUG] - [INPUT] E Key Released (Hold: 108ms) Target: (18, 1)
+2026-01-17 18:17:35,098 - [DEBUG] - [INPUT] E Key Pressed
+2026-01-17 18:17:35,149 - [DEBUG] - [INPUT] E Key Released (Hold: 50ms) Target: (18, 4)
+2026-01-17 18:17:35,150 - [INFO] - [PLAYER] Interact with 9312000 at (18, 4) Mode: short
+2026-01-17 18:18:29,559 - [INFO] - [SYSTEM] Engine Shutting Down
